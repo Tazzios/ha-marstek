@@ -1,0 +1,314 @@
+mode: single
+max_exceeded: silent
+
+blueprint:
+  name: Marstek X on the Meter
+  description: Control Marstek Batteries according to a grid sensor (adapted from Sessy blueprint)
+  author: PimDoos (adapted for Marstek) / Tazzios
+  domain: automation
+  input:
+    grid_entity:
+      name: Grid
+      description: Entity measuring grid net consumption
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            device_class: power
+    battery_device:
+      name: Battery
+      description: Marstek Battery devices to control
+      selector:
+        device:
+          filter:
+            integration: marstek
+          multiple: true
+
+    setpoint_smoothing_value:
+      name: Smoothing value
+      description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
+      default: 100
+      selector:
+        number:
+          min: 50
+          max: 2000
+    setpoint_optimal_value:
+      name: Max optimal power
+      description: Amount of power required before loadbalancing to more batteries
+      default: 1200
+      selector:
+        number:
+          min: 50
+          max: 2200
+    setpoint_min:
+      name: Minimum power setpoint
+      description: Minimum total setpoint for all batteries combined. If this is 0 or higher, charging is disabled.
+      default: -12000
+      selector:
+        number:
+          min: -12000
+          max: 12000
+          mode: box
+    setpoint_max:
+      name: Maximum power setpoint
+      description: Minimum total setpoint for all batteries combined. If this is 0 or lower, discharging is disabled.
+      default: 12000
+      selector:
+        number:
+          min: -12000
+          max: 12000
+          mode: box
+    setpoint_target_value:
+      name: Target value
+      description: Target value (X) for the Grid entity
+      default: 0
+      selector:
+        number:
+          min: -3600
+          max: 3600
+          mode: box
+    offset_entity:
+      name: Offset entities
+      description: Entities whose value (in Watts) should be subtracted from the grid sensor. E.g. Car charger power sensor
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain:
+              - sensor
+              - number
+              - input_number
+    update_interval:
+      name: Update interval
+      description: Time to wait before accepting new data from the grid sensor
+      selector:
+        duration:
+    update_timeout:
+      name: Update timeout
+      description: Maximum time to wait for new data from the grid sensor
+      selector:
+        duration:
+    battery_soc_min:
+      name: Minimum State of Charge
+      description: Batteries below this level will not participate in the load balancing pool
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 99
+    battery_soc_max:
+      name: Maximum State of Charge
+      description: Batteries above this level will not participate in the load balancing pool
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+
+    priority_offset_template:
+      name: Priority offset template
+      description: Template defining a value to rotate battery priority by. Values higher than the number of batteries will loop back to 0.
+      default: "{{ now().day }}"
+      selector:
+        template:
+
+variables:
+  device_ids: !input battery_device
+  optimal_max_power: !input setpoint_optimal_value
+  grid_entity: !input grid_entity
+  smoothing: !input setpoint_smoothing_value
+  offset: !input setpoint_target_value
+  offset_entity: !input offset_entity
+  min_battery_level: !input battery_soc_min
+  max_battery_level: !input battery_soc_max
+  min_setpoint: !input setpoint_min
+  max_setpoint: !input setpoint_max
+
+trigger:
+  - trigger: state
+    entity_id: !input grid_entity
+
+  - trigger: homeassistant
+    event: start
+
+action:
+  - variables:
+      device_ids: |
+        {% if device_ids is string %}{% set device_ids = [ device_ids ] %}{% endif %}
+        {{ device_ids }}
+      battery_count: |
+        {{ device_ids | count }}
+
+      priority_offset_template: !input priority_offset_template
+      priority_offset: |
+        {{ priority_offset_template % battery_count }}
+
+  - variables:
+      # Get Entity IDs from device IDs
+      battery_mode_entity: |
+        {% set entities = namespace(mode=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search","_mode$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.mode[priority_offset:] + entities.mode[:priority_offset] }}
+      battery_charge_entity: |
+        {% set entities = namespace(charge=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.charge = entities.charge + [device_entities(device_id) | list | select("search","_charge_power$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.charge[priority_offset:] + entities.charge[:priority_offset] }}
+      battery_discharge_entity: |
+        {% set entities = namespace(discharge=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.discharge = entities.discharge + [device_entities(device_id) | list | select("search","_discharge_power$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.discharge[priority_offset:] + entities.discharge[:priority_offset] }}
+
+      battery_soc_entity: |
+        {% set entities = namespace(soc=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search","_state_of_charge$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
+      battery_state_entity: |
+        {% set entities = namespace(state=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.state = entities.state + [device_entities(device_id) | list | select("search","_system_state$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.state[priority_offset:] + entities.state[:priority_offset] }}
+
+      # Get grid power and convert to Watts
+      grid: >
+        {% set multiplier = 0 %} 
+        {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
+        {% if grid_unit == "W" %}
+          {% set multiplier = 1 %}
+        {% elif grid_unit == "kW" %}
+          {% set multiplier = 1000 %}
+        {% endif %}
+        {% set grid_power = states(grid_entity) | float %}
+        {{ grid_power * multiplier }}
+
+  - variables:
+      # Calculate initial setpoint
+      battery: >
+        {% set charge_sum = battery_charge_entity | map("states") | list | map('float') | sum %}
+        {% set discharge_sum = battery_discharge_entity | map("states") | list | map('float') | sum %}
+        {{ (discharge_sum - charge_sum) | int }}
+
+      # Calculate offset
+      offset: >
+        {% if offset_entity is string %}{% set offset_entity = [offset_entity] %}{% endif %}
+        {% set offset = offset + offset_entity | map("states") | map("int") | sum %}
+        {{ offset }}
+
+      # Calculate new setpoint
+      setpoint: >
+        {% set load = battery + grid %}
+        {% set setpoint_target = load - offset %}
+        {% set setpoint_smooth = [[setpoint_target, battery - smoothing, min_setpoint] | max, battery + smoothing, max_setpoint] | min %}
+        {{ setpoint_smooth }}
+
+  - variables:
+      # Distribute setpoint across batteries
+      battery_setpoints: |
+        {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
+        {% set batteries = namespace(entities=[], available=[], standby=[]) %}
+        {% for i in range(0,battery_count) %}
+          {% set soc = states(battery_soc_entity[i]) | int %}
+          {% if batteries.available | count < num_optimal 
+            and states(battery_state_entity[i]) != "error"
+            and (soc >= min_battery_level or setpoint < 0)
+            and (states(battery_state_entity[i]) != "battery_empty" or setpoint < 0)
+            and (soc <= max_battery_level or setpoint > 0)
+            and (states(battery_state_entity[i]) != "battery_full" or setpoint > 0) %}
+            {% set batteries.available = batteries.available + [i] %}
+          {% else %}
+            {% set batteries.standby = batteries.standby + [i] %}
+          {% endif %}
+        {% endfor %}
+
+        {% for i in batteries.available %}
+          {% set value = (setpoint / (batteries.available | count)) | int %}
+          {% set value = [[value,-2200] | max, 2200] | min %}
+          {% set mode = "discharge" if value > 0 else ("charge" if value < 0 else "standby") %}
+          {% set batteries.entities = batteries.entities + [{"mode": battery_mode_entity[i], "charge": battery_charge_entity[i], "discharge": battery_discharge_entity[i], "value": value, "mode_value": mode}] %}
+        {% endfor %}
+
+        {% for i in batteries.standby %}
+          {% set batteries.entities = batteries.entities + [{"mode": battery_mode_entity[i], "charge": battery_charge_entity[i], "discharge": battery_discharge_entity[i], "value": 0, "mode_value": "standby"}] %}
+        {% endfor %}
+        {{ batteries.entities }}
+
+  - repeat:
+      for_each: |
+        {{ battery_setpoints }}
+      sequence:
+        - if:
+            - condition: template
+              value_template: |
+                {{ repeat.item.value is defined }}
+          then:
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: |
+                        {{ repeat.item.value > 0 }}
+                  sequence:
+                    - action: number.set_value
+                      continue_on_error: true
+                      target:
+                        entity_id: |
+                          {{ repeat.item.discharge }}
+                      data:
+                        value: |
+                          {{ repeat.item.value | int }}
+                    - action: select.select_option
+                      continue_on_error: true
+                      target:
+                        entity_id: |
+                          {{ repeat.item.mode }}
+                      data:
+                        option: "discharge"
+                - conditions:
+                    - condition: template
+                      value_template: |
+                        {{ repeat.item.value < 0 }}
+                  sequence:
+                    - action: number.set_value
+                      continue_on_error: true
+                      target:
+                        entity_id: |
+                          {{ repeat.item.charge }}
+                      data:
+                        value: |
+                          {{ (repeat.item.value * -1) | int }}
+                    - action: select.select_option
+                      continue_on_error: true
+                      target:
+                        entity_id: |
+                          {{ repeat.item.mode }}
+                      data:
+                        option: "charge"
+                - conditions:
+                    - condition: template
+                      value_template: |
+                        {{ repeat.item.value == 0 }}
+                  sequence:
+                    - action: number.set_value
+                      continue_on_error: true
+                      target:
+                        entity_id:
+                          - "{{ repeat.item.charge }}"
+                          - "{{ repeat.item.discharge }}"
+                      data:
+                        value: 0
+                    - action: select.select_option
+                      continue_on_error: true
+                      target:
+                        entity_id: |
+                          {{ repeat.item.mode }}
+                      data:
+                        option: "standby"
+  - delay: !input update_interval
