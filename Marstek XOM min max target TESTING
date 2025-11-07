@@ -238,9 +238,14 @@ action:
         {% else %}
           {% set target_diff = 0 %}
         {% endif %}
-        {% set lower = [target_diff, battery - smoothing, min_setpoint] | max %}
-        {% set setpoint_smooth = [lower, battery + smoothing, max_setpoint] | min %}
-        {{ setpoint_smooth | float(0) }}
+
+        {% if target_diff != 0%}
+            {% set lower = [target_diff, battery - smoothing, min_setpoint] | max %}
+            {% set setpoint_smooth = [lower, battery + smoothing, max_setpoint] | min %}
+            {{ setpoint_smooth }}
+        {% else %}
+            0
+        {% endif %}
 
   - variables:
       battery_setpoints: >
