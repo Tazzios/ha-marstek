@@ -168,13 +168,6 @@ action:
           {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search","_forcible_charge_discharge$") | list | join("")] %}
         {% endfor %}
         {{ entities.mode[priority_offset:] + entities.mode[:priority_offset] }}
-        
-      battery_acpower_entity: >
-        {% set entities = namespace(acpower=[]) %}
-        {% for device_id in device_ids %}
-        {% set entities.acpower = entities.acpower + [device_entities(device_id) | list | select("search","_ac_power$") | list | join("")] %}
-        {% endfor %}
-        {{ entities.acpower[priority_offset:] + entities.acpower[:priority_offset] }}
 
       battery_setpointcharge_entity: >
         {% set entities = namespace(setpointcharge=[]) %}
@@ -206,7 +199,7 @@ action:
 
   - variables:
       battery: >
-        {{  battery_acpower_entity | map("states") | list | map('int') | sum }}
+        {{ ( (0 - battery_setpointcharge_entity ) + battery_setpointdischarge_entity) | map("states") | list | map('int') | sum }}
       offset: >
         {% if offset_entity is string %}{% set offset_entity = [offset_entity] %}{% endif %}
         {% set offset = offset + offset_entity | map("states") | map("int") | sum %}
