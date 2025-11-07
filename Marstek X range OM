@@ -2,8 +2,8 @@ mode: single
 max_exceeded: silent
 
 blueprint:
-  name: Marstek X on the Meter
-  description: Control a Marstek Battery according to a grid sensor
+  name: Marstek X range on the Meter
+  description: Control  Marstek Battery`s according to a grid sensor and a target range
   author: Tazzios (Based on PimDoos`s works)
   domain: automation
 
