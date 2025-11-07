@@ -303,7 +303,7 @@ action:
                     entity_id: >
                       {{ repeat.item.mode }}
                   data:
-                    option: idle
+                    option: stop
                 - action: number.set_value
                   continue_on_error: true
                   target:
