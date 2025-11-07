@@ -240,7 +240,7 @@ action:
         {% endif %}
         {% set lower = [target_diff, battery - smoothing, min_setpoint] | max %}
         {% set setpoint_smooth = [lower, battery + smoothing, max_setpoint] | min %}
-        {{ setpoint_smooth }}
+        {{ setpoint_smooth | float(0) }}
 
   - variables:
       battery_setpoints: >
