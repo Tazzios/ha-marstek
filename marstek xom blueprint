@@ -321,15 +321,14 @@ action:
                   data:
                     value: >
                       {{ repeat.item.value | int }}
-                      
-                 - action: number.set_value
+                - action: number.set_value
                   continue_on_error: true
                   target:
                     entity_id: >
                       {{ repeat.item.setpointcharge }}
                   data:
-                    # ander setpoint wissen
                     value: 0
+
                       
 
   - delay: !input update_interval
