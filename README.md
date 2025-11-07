@@ -3,6 +3,12 @@ Github to share home assistant automations for the marstek.
 
 **marstek xom blueprint**  
 Based on the work of PimDoos https://github.com/PimDoos/ha-sessy-examples/tree/main 
+Features:
+- Xom Load/discharge, NOM, XOM only load, XOM only discharge.
+- load balancing
+- Battery rolation on day
+
+Loadbalacing
 
 Requirements
 - Marstek battery
