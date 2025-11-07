@@ -277,6 +277,14 @@ action:
                     # negatief setpoint omzetten in positief
                     value: >
                       {{ repeat.item.value | abs | int }}
+                - action: number.set_value
+                  continue_on_error: true
+                  target:
+                    entity_id: >
+                      {{ repeat.item.setpointdischarge }}
+                  data:
+                    # ander setpoint wissen
+                    value: 0
 
   # --- Positieve setpoints (ontladen) ---
   - choose:
@@ -306,5 +314,15 @@ action:
                   data:
                     value: >
                       {{ repeat.item.value | int }}
+                      
+                 - action: number.set_value
+                  continue_on_error: true
+                  target:
+                    entity_id: >
+                      {{ repeat.item.setpointcharge }}
+                  data:
+                    # ander setpoint wissen
+                    value: 0
+                      
 
   - delay: !input update_interval
