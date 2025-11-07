@@ -199,7 +199,7 @@ action:
 
   - variables:
       battery: >
-        {{ (battery_setpointcharge_entity + battery_setpointdischarge_entity) | map("states") | list | map('int') | sum }}
+        {{ ( (0 - battery_setpointcharge_entity ) + battery_setpointdischarge_entity) | map("states") | list | map('int') | sum }}
       offset: >
         {% if offset_entity is string %}{% set offset_entity = [offset_entity] %}{% endif %}
         {% set offset = offset + offset_entity | map("states") | map("int") | sum %}
