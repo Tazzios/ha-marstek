@@ -3,8 +3,8 @@ max_exceeded: silent
 
 blueprint:
   name: Marstek X on the Meter
-  description: Control Marstek Batteries according to a grid sensor (adapted from Sessy blueprint)
-  author: PimDoos (adapted for Marstek) / Tazzios
+  description: Control a Marstek Battery according to a grid sensor
+  author: PimDoos
   domain: automation
   input:
     grid_entity:
@@ -21,7 +21,7 @@ blueprint:
       selector:
         device:
           filter:
-            integration: marstek
+            integration: esphome
           multiple: true
 
     setpoint_smoothing_value:
@@ -31,15 +31,15 @@ blueprint:
       selector:
         number:
           min: 50
-          max: 2000
+          max: 2500
     setpoint_optimal_value:
       name: Max optimal power
       description: Amount of power required before loadbalancing to more batteries
-      default: 1200
+      default: 2000
       selector:
         number:
           min: 50
-          max: 2200
+          max: 2500
     setpoint_min:
       name: Minimum power setpoint
       description: Minimum total setpoint for all batteries combined. If this is 0 or higher, charging is disabled.
@@ -64,8 +64,8 @@ blueprint:
       default: 0
       selector:
         number:
-          min: -3600
-          max: 3600
+          min: -5000
+          max: 5000
           mode: box
     offset_entity:
       name: Offset entities
@@ -84,11 +84,13 @@ blueprint:
       description: Time to wait before accepting new data from the grid sensor
       selector:
         duration:
+
     update_timeout:
       name: Update timeout
       description: Maximum time to wait for new data from the grid sensor
       selector:
         duration:
+
     battery_soc_min:
       name: Minimum State of Charge
       description: Batteries below this level will not participate in the load balancing pool
@@ -146,24 +148,41 @@ action:
 
   - variables:
       # Get Entity IDs from device IDs
+      battery_rs485_control_entity: |
+        {% set entities = namespace(rs485_control=[]) %}
+        {% for device_id in device_ids %}
+        {% set entities.rs485_control = entities.rs485_control + [device_entities(device_id) | list | select("search","_rs485_control_mode$") | list | join("")] %}
+        {% endfor %}
+        {{ entities.rs485_control[priority_offset:] + entities.rs485_control[:priority_offset] }}
+  
       battery_mode_entity: |
         {% set entities = namespace(mode=[]) %}
         {% for device_id in device_ids %}
-        {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search","_mode$") | list | join("")] %}
+        {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search","_forcible_charge_discharge$") | list | join("")] %}
         {% endfor %}
         {{ entities.mode[priority_offset:] + entities.mode[:priority_offset] }}
-      battery_charge_entity: |
-        {% set entities = namespace(charge=[]) %}
+
+
+      #battery_setpoint_entity: |
+      #      {% set entities = namespace(setpoint=[]) %}
+      #     {% for device_id in device_ids %}
+      #      {% set entities.setpoint = entities.setpoint + [device_entities(device_id) | list | select("search","_power_setpoint$") | list | join("")] %}
+      #      {% endfor %}
+      #      {{ entities.setpoint[priority_offset:] + entities.setpoint[:priority_offset] }}
+        
+      battery_setpointcharge_entity: |
+        {% set entities = namespace(setpointcharge=[]) %}
         {% for device_id in device_ids %}
-        {% set entities.charge = entities.charge + [device_entities(device_id) | list | select("search","_charge_power$") | list | join("")] %}
+        {% set entities.setpointcharge = entities.setpointcharge + [device_entities(device_id) | list | select("search","_forcible_charge_power$") | list | join("")] %}
         {% endfor %}
-        {{ entities.charge[priority_offset:] + entities.charge[:priority_offset] }}
-      battery_discharge_entity: |
-        {% set entities = namespace(discharge=[]) %}
+        {{ entities.setpointcharge[priority_offset:] + entities.setpointcharge[:priority_offset] }}
+        
+      battery_setpointdischarge_entity: |
+        {% set entities = namespace(setpointdischarge=[]) %}
         {% for device_id in device_ids %}
-        {% set entities.discharge = entities.discharge + [device_entities(device_id) | list | select("search","_discharge_power$") | list | join("")] %}
+        {% set entities.setpointdischarge = entities.setpointdischarge + [device_entities(device_id) | list | select("search","_forcible_discharge_power$") | list | join("")] %}
         {% endfor %}
-        {{ entities.discharge[priority_offset:] + entities.discharge[:priority_offset] }}
+        {{ entities.setpointdischarge[priority_offset:] + entities.setpointdischarge[:priority_offset] }}
 
       battery_soc_entity: |
         {% set entities = namespace(soc=[]) %}
@@ -171,12 +190,14 @@ action:
         {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search","_state_of_charge$") | list | join("")] %}
         {% endfor %}
         {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
-      battery_state_entity: |
-        {% set entities = namespace(state=[]) %}
-        {% for device_id in device_ids %}
-        {% set entities.state = entities.state + [device_entities(device_id) | list | select("search","_system_state$") | list | join("")] %}
-        {% endfor %}
-        {{ entities.state[priority_offset:] + entities.state[:priority_offset] }}
+   
+
+   #battery_state_entity: |
+   #     {% set entities = namespace(state=[]) %}
+   #     {% for device_id in device_ids %}
+   #     {% set entities.state = entities.state + [device_entities(device_id) | list | select("search","_system_state$") | list | join("")] %}
+   #     {% endfor %}
+   #     {{ entities.state[priority_offset:] + entities.state[:priority_offset] }}
 
       # Get grid power and convert to Watts
       grid: >
@@ -193,9 +214,7 @@ action:
   - variables:
       # Calculate initial setpoint
       battery: >
-        {% set charge_sum = battery_charge_entity | map("states") | list | map('float') | sum %}
-        {% set discharge_sum = battery_discharge_entity | map("states") | list | map('float') | sum %}
-        {{ (discharge_sum - charge_sum) | int }}
+        {{ (battery_setpointcharge_entity + battery_setpointdischarge_entity) | map("states") | list | map('int') | sum }}
 
       # Calculate offset
       offset: >
@@ -209,106 +228,112 @@ action:
         {% set setpoint_target = load - offset %}
         {% set setpoint_smooth = [[setpoint_target, battery - smoothing, min_setpoint] | max, battery + smoothing, max_setpoint] | min %}
         {{ setpoint_smooth }}
+        
+ #chatgpt voorstel       
+#{% set lower = [setpoint_target, battery - smoothing, min_setpoint] | max %}
+#{% set setpoint_smooth = [lower, battery + smoothing, max_setpoint] | min %}
+#{{ setpoint_smooth }}
 
   - variables:
       # Distribute setpoint across batteries
       battery_setpoints: |
         {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
         {% set batteries = namespace(entities=[], available=[], standby=[]) %}
+
         {% for i in range(0,battery_count) %}
-          {% set soc = states(battery_soc_entity[i]) | int %}
           {% if batteries.available | count < num_optimal 
-            and states(battery_state_entity[i]) != "error"
-            and (soc >= min_battery_level or setpoint < 0)
-            and (states(battery_state_entity[i]) != "battery_empty" or setpoint < 0)
-            and (soc <= max_battery_level or setpoint > 0)
-            and (states(battery_state_entity[i]) != "battery_full" or setpoint > 0) %}
+          and states(battery_rs485_control_entity[i]) == "enable"
+         # and states(battery_state_entity[i]) != "error"
+          and (states(battery_soc_entity[i]) | int >= min_battery_level or setpoint < 0)
+          and (states(battery_state_entity[i]) != "battery_empty" or setpoint < 0)
+          and (states(battery_soc_entity[i]) | int <= max_battery_level or setpoint > 0) 
+          and (states(battery_state_entity[i]) != "battery_full" or setpoint > 0) %}
             {% set batteries.available = batteries.available + [i] %}
           {% else %}
             {% set batteries.standby = batteries.standby + [i] %}
           {% endif %}
+          
         {% endfor %}
-
         {% for i in batteries.available %}
           {% set value = (setpoint / (batteries.available | count)) | int %}
-          {% set value = [[value,-2200] | max, 2200] | min %}
-          {% set mode = "discharge" if value > 0 else ("charge" if value < 0 else "standby") %}
-          {% set batteries.entities = batteries.entities + [{"mode": battery_mode_entity[i], "charge": battery_charge_entity[i], "discharge": battery_discharge_entity[i], "value": value, "mode_value": mode}] %}
-        {% endfor %}
+          {% set value = [[value,-2200] | max, 2200] | min %}           
+          {% set batteries.entities = batteries.entities + [{
+            "setpointcharge": battery_setpointcharge_entity[i],
+            "setpointdischarge": battery_setpointdischarge_entity[i],
+            "rs485_control": battery_rs485_control_entity[i],
+            "mode": battery_mode_entity[i],
+            "value": value
+          }] %}
 
+        {% endfor %}
         {% for i in batteries.standby %}
-          {% set batteries.entities = batteries.entities + [{"mode": battery_mode_entity[i], "charge": battery_charge_entity[i], "discharge": battery_discharge_entity[i], "value": 0, "mode_value": "standby"}] %}
+          {% set batteries.entities = batteries.entities + [{
+            "setpointcharge": battery_setpointcharge_entity[i],
+            "setpointdischarge": battery_setpointdischarge_entity[i],
+            "rs485_control": battery_rs485_control_entity[i],
+            "mode": battery_mode_entity[i],
+            "value": 0
+          }] %}
         {% endfor %}
         {{ batteries.entities }}
 
-  - repeat:
-      for_each: |
-        {{ battery_setpoints }}
-      sequence:
-        - if:
-            - condition: template
-              value_template: |
-                {{ repeat.item.value is defined }}
-          then:
-            - choose:
-                - conditions:
-                    - condition: template
-                      value_template: |
-                        {{ repeat.item.value > 0 }}
-                  sequence:
-                    - action: number.set_value
-                      continue_on_error: true
-                      target:
-                        entity_id: |
-                          {{ repeat.item.discharge }}
-                      data:
-                        value: |
-                          {{ repeat.item.value | int }}
-                    - action: select.select_option
-                      continue_on_error: true
-                      target:
-                        entity_id: |
-                          {{ repeat.item.mode }}
-                      data:
-                        option: "discharge"
-                - conditions:
-                    - condition: template
-                      value_template: |
-                        {{ repeat.item.value < 0 }}
-                  sequence:
-                    - action: number.set_value
-                      continue_on_error: true
-                      target:
-                        entity_id: |
-                          {{ repeat.item.charge }}
-                      data:
-                        value: |
-                          {{ (repeat.item.value * -1) | int }}
-                    - action: select.select_option
-                      continue_on_error: true
-                      target:
-                        entity_id: |
-                          {{ repeat.item.mode }}
-                      data:
-                        option: "charge"
-                - conditions:
-                    - condition: template
-                      value_template: |
-                        {{ repeat.item.value == 0 }}
-                  sequence:
-                    - action: number.set_value
-                      continue_on_error: true
-                      target:
-                        entity_id:
-                          - "{{ repeat.item.charge }}"
-                          - "{{ repeat.item.discharge }}"
-                      data:
-                        value: 0
-                    - action: select.select_option
-                      continue_on_error: true
-                      target:
-                        entity_id: |
-                          {{ repeat.item.mode }}
-                      data:
-                        option: "standby"
+# --- Negatieve setpoints (laden) ---
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ battery_setpoints | selectattr('value','lt',0) | list | count > 0 }}
+        sequence:
+          - repeat:
+              for_each: >
+                {{ battery_setpoints | selectattr('value','lt',0) | list }}
+              sequence:
+                - condition: template
+                  value_template: >
+                    {{ states(repeat.item.rs485_control) == "enable" }}
+                - action: select.select_option
+                  target:
+                    entity_id: >
+                      {{ repeat.item.mode }}
+                  data:
+                    option: charge
+                - action: number.set_value
+                  continue_on_error: true
+                  target:
+                    entity_id: >
+                      {{ repeat.item.setpointcharge }}
+                  data:
+                  # negatief setpoint omzetten in positief
+                    value: >
+                      {{ repeat.item.value | abs | int }} 
+
+  # --- Positieve setpoints (ontladen) ---
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ battery_setpoints | selectattr('value','gt',0) | list | count > 0 }}
+        sequence:
+          - repeat:
+              for_each: >
+                {{ battery_setpoints | selectattr('value','gt',0) | list }}
+              sequence:
+                - condition: template
+                  value_template: >
+                    {{ states(repeat.item.rs485_control) == "enable" }}
+                - action: select.select_option
+                  target:
+                    entity_id: >
+                      {{ repeat.item.mode }}
+                  data:
+                    option: discharge
+                - action: number.set_value
+                  continue_on_error: true
+                  target:
+                    entity_id: >
+                      {{ repeat.item.setpointdischarge }}
+                  data:
+                    value: >
+                      {{ repeat.item.value | int }}
+
   - delay: !input update_interval
