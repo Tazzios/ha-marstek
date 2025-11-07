@@ -1,13 +1,6 @@
 
 Github to share home assistant automations for the marstek.
 
-**marstek xom blueprint**  
-Based on the work of PimDoos https://github.com/PimDoos/ha-sessy-examples/tree/main  
-Features:
-- Xom Load/discharge, NOM, XOM only load, XOM only discharge.
-- load balancing
-- Battery rolation on day
-
 Requirements
 - Marstek battery
 - Lilygo with ESPHome https://github.com/Superduper1969/MarstekVenus-LilygoRS485
@@ -18,3 +11,15 @@ Requirements
     -   _forcible_charge_power
     -   _forcible_discharge_power
     -   _state_of_charge
+   
+**marstek xom blueprint**  
+Based on the work of PimDoos https://github.com/PimDoos/ha-sessy-examples/tree/main  
+Features:
+- Xom Load/discharge, NOM, XOM only load, XOM only discharge.
+- load balancing
+- Battery rolation on day
+
+**Marstek X range OM Blueprint**
+Same as xom with the addition that you can set an range as target. 
+
+For example if your fuse can handle max 2300watt you can set an -2300 till 2300 target. While in this range the battery will do nothing if you go above or below it it will charge/discharge.
