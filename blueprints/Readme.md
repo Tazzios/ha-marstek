@@ -15,7 +15,7 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 - **Marstek battery**  
 - **Lilygo with ESPHome**  
   - Repository: [MarstekVenus-LilygoRS485](https://github.com/Superduper1969/MarstekVenus-LilygoRS485)  
-  - Necessary entity naming convention (the part before the underscore can be customized):
+    Your entity names must end in: (the part before the underscore can be customized)
     - `_rs485_control_mode`  
     - `_forcible_charge_discharge`  
     - `_ac_power`  
