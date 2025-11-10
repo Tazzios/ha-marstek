@@ -12,7 +12,6 @@ triggers:
     entity_id:
       - binary_sensor.my_cheapest_hours
     enabled: true
-    id: Goedkoop
     from: "on"
     to: "off"
   - trigger: state
@@ -24,7 +23,6 @@ triggers:
   - trigger: state
     entity_id:
       - binary_sensor.expensive_hours
-    id: Duur
     to: "off"
     from: "on"
   - trigger: numeric_state
