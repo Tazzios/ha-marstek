@@ -70,7 +70,7 @@ actions:
             data: {}
             target:
               entity_id:
-                - automation.marstek_x_on_the_meter_test
+                - automation.marstek_xom_laden
         alias: Goedkoop
       - conditions:
           - condition: trigger
@@ -82,7 +82,7 @@ actions:
             data: {}
             target:
               entity_id:
-                - automation.marstek_x_on_the_meter_test
+                - automation.marstek_xom_laden
           - wait_for_trigger:
               - type: battery_level
                 device_id: ae7f494899ec0817d8915b4443a40dae
