@@ -298,12 +298,19 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-                - action: select.select_option
-                  target:
-                    entity_id: >
-                      {{ repeat.item.mode }}
-                  data:
-                    option: stop
+              # Alleen mode aanpassen als die nog niet goed staat
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: >
+                          {{ states(repeat.item.mode) != "stop" }}
+                    sequence:
+                      - action: select.select_option
+                        target:
+                          entity_id: >
+                            {{ repeat.item.mode }}
+                        data:
+                          option: stop
                 - action: number.set_value
                   continue_on_error: true
                   target:
@@ -333,12 +340,20 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-                - action: select.select_option
-                  target:
-                    entity_id: >
-                      {{ repeat.item.mode }}
-                  data:
-                    option: charge
+
+              # Alleen mode aanpassen als die nog niet goed staat
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: >
+                          {{ states(repeat.item.mode) != "charge" }}
+                    sequence:
+                      - action: select.select_option
+                        target:
+                          entity_id: >
+                            {{ repeat.item.mode }}
+                        data:
+                          option: charge
                 - action: number.set_value
                   continue_on_error: true
                   target:
@@ -371,12 +386,20 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-                - action: select.select_option
-                  target:
-                    entity_id: >
-                      {{ repeat.item.mode }}
-                  data:
-                    option: discharge
+
+              # Alleen mode aanpassen als die nog niet goed staat
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: >
+                          {{ states(repeat.item.mode) != "discharge" }}
+                    sequence:
+                      - action: select.select_option
+                        target:
+                          entity_id: >
+                            {{ repeat.item.mode }}
+                        data:
+                          option: discharge
                 - action: number.set_value
                   continue_on_error: true
                   target:
