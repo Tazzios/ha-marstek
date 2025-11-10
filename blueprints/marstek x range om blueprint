@@ -231,12 +231,12 @@ action:
         {% set net_load = battery + grid %}
         {% if net_load < target_min %}
           {# te veel export -> laad batterij #}
-          {% set target_diff = net_load - target_min %}
+          {% set target_diff = (net_load - offset_total ) - target_min %}
         {% elif net_load > target_max %}
           {# te veel import -> ontlaad batterij #}
-          {% set target_diff = net_load - target_max %}
+          {% set target_diff = (net_load - offset_total) - target_max %}
         {% else %}
-          {% set target_diff = 0 %}
+          {% set target_diff = 0 - offset_total%}
         {% endif %}
 
         {% if target_diff != 0%}
