@@ -1,0 +1,116 @@
+alias: Marstek controller
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.my_cheapest_hours
+    enabled: true
+    id: Goedkoop
+    from: "off"
+    to: "on"
+  - trigger: state
+    entity_id:
+      - binary_sensor.my_cheapest_hours
+    enabled: true
+    id: Goedkoop
+    from: "on"
+    to: "off"
+  - trigger: state
+    entity_id:
+      - binary_sensor.expensive_hours
+    id: Duur
+    to: "on"
+    from: "off"
+  - trigger: state
+    entity_id:
+      - binary_sensor.expensive_hours
+    id: Duur
+    to: "off"
+    from: "on"
+  - trigger: numeric_state
+    entity_id:
+      - sensor.lilygo_rs485_marstek_battery_state_of_charge
+    below: 15
+    id: bijna leeg
+    alias: Accu bijna leeg
+conditions: []
+actions:
+  - action: automation.turn_off
+    metadata: {}
+    data:
+      stop_actions: true
+    target:
+      label_id: marstek
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - Duur
+        sequence:
+          - action: automation.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id: automation.marstek_xom_ontladen
+        alias: Duur
+      - conditions:
+          - condition: trigger
+            id:
+              - Duur
+          - alias: Prijsverschil
+            condition: template
+            value_template: >-
+              {{state_attr('sensor.nordpool_kwh_nl_eur_3_10_021',
+              'max')-state_attr('sensor.nordpool_kwh_nl_eur_3_10_021', 'min')
+              >0.10}}
+            enabled: true
+        sequence:
+          - action: automation.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id:
+                - automation.marstek_x_on_the_meter_test
+        alias: Goedkoop
+      - conditions:
+          - condition: trigger
+            id:
+              - bijna leeg
+        sequence:
+          - action: automation.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id:
+                - automation.marstek_x_on_the_meter_test
+          - wait_for_trigger:
+              - type: battery_level
+                device_id: ae7f494899ec0817d8915b4443a40dae
+                entity_id: d20a68ea15411854283d17986fd17447
+                domain: sensor
+                trigger: device
+                above: 20
+                alias: Batterij meer dan 20% geladen
+            timeout:
+              hours: 1
+              minutes: 0
+              seconds: 0
+              milliseconds: 0
+          - action: automation.turn_off
+            metadata: {}
+            data:
+              stop_actions: true
+            target:
+              label_id: marstek
+          - action: automation.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id: automation.marstek_netsafe
+    default:
+      - action: automation.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: automation.marstek_xom_ontladen
+mode: single
