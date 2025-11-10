@@ -298,7 +298,6 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-              # Alleen mode aanpassen als die nog niet goed staat
               - choose:
                   - conditions:
                       - condition: template
@@ -340,8 +339,6 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-
-              # Alleen mode aanpassen als die nog niet goed staat
               - choose:
                   - conditions:
                       - condition: template
@@ -386,8 +383,6 @@ action:
                 - condition: template
                   value_template: >
                     {{ states(repeat.item.rs485_control) == "enable" }}
-
-              # Alleen mode aanpassen als die nog niet goed staat
               - choose:
                   - conditions:
                       - condition: template
