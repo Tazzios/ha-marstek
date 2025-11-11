@@ -54,7 +54,7 @@ actions:
       - conditions:
           - condition: trigger
             id:
-              - Duur
+              - Goedkoop
           - alias: Prijsverschil
             condition: template
             value_template: >-
