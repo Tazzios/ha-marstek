@@ -310,20 +310,20 @@ action:
                               {{ repeat.item.mode }}
                           data:
                             option: stop
-                - action: number.set_value
-                  continue_on_error: true
-                  target:
-                    entity_id: >
-                      {{ repeat.item.setpointcharge }}
-                  data:
-                    value: 0
-                - action: number.set_value
-                  continue_on_error: true
-                  target:
-                    entity_id: >
-                      {{ repeat.item.setpointdischarge }}
-                  data:
-                    value: 0
+                        - action: number.set_value
+                          continue_on_error: true
+                          target:
+                            entity_id: >
+                              {{ repeat.item.setpointcharge }}
+                          data:
+                            value: 0
+                        - action: number.set_value
+                          continue_on_error: true
+                          target:
+                            entity_id: >
+                              {{ repeat.item.setpointdischarge }}
+                          data:
+                            value: 0
 
   # --- Negatieve setpoints (laden) ---
   - choose:
