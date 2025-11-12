@@ -5,7 +5,6 @@ triggers:
     entity_id:
       - binary_sensor.my_cheapest_hours
     enabled: true
-    id: Goedkoop
     from: "off"
     to: "on"
   - trigger: state
@@ -17,7 +16,6 @@ triggers:
   - trigger: state
     entity_id:
       - binary_sensor.expensive_hours
-    id: Duur
     to: "on"
     from: "off"
   - trigger: state
@@ -41,9 +39,10 @@ actions:
       label_id: marstek
   - choose:
       - conditions:
-          - condition: trigger
-            id:
-              - Duur
+          - condition: state
+            entity_id: binary_sensor.expensive_hours
+            state:
+              - "on"
         sequence:
           - action: automation.turn_on
             metadata: {}
@@ -52,9 +51,10 @@ actions:
               entity_id: automation.marstek_xom_ontladen
         alias: Duur
       - conditions:
-          - condition: trigger
-            id:
-              - Goedkoop
+          - condition: state
+            entity_id: binary_sensor.my_cheapest_hours
+            state:
+              - "on"
           - alias: Prijsverschil
             condition: template
             value_template: >-
@@ -71,9 +71,9 @@ actions:
                 - automation.marstek_xom_laden
         alias: Goedkoop
       - conditions:
-          - condition: trigger
-            id:
-              - bijna leeg
+          - condition: numeric_state
+            entity_id: sensor.lilygo_rs485_marstek_battery_state_of_charge
+            below: 15
         sequence:
           - action: automation.turn_on
             metadata: {}
@@ -110,5 +110,6 @@ actions:
         metadata: {}
         data: {}
         target:
-          entity_id: automation.marstek_xom_ontladen
+          entity_id:
+            - automation.marstek_netsafe
 mode: single
