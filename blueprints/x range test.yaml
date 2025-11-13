@@ -7,7 +7,7 @@ blueprint:
     Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
     
     **Version**: 1.2
-    d
+    e
     **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
 
     Refactored min and max power setpoints, also new renamed.
@@ -252,13 +252,6 @@ action:
         {% endfor %}
         {{ entities.setpointdischarge[priority_offset:] + entities.setpointdischarge[:priority_offset] }}
 
-      battery_soc_entity: >
-        {% set entities = namespace(soc=[]) %}
-        {% for device_id in device_ids %}
-          {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search","_state_of_charge$") | list | join("")] %}
-        {% endfor %}
-        {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
-
       # Get grid power and convert to Watts
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
@@ -293,14 +286,7 @@ action:
             {{ target_diff }}
         {% endif %}
 
-  - variables:
-      battery_current_soc: >
-        {% set soc_list = [] %}
-        {% for i in range(0, battery_count) %}
-          {% set soc_list = soc_list + [ states(battery_soc_entity[i]) | int ] %}
-        {% endfor %}
-        {{ soc_list }}
-      
+  - variables:      
       battery_setpoints: >
         {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
         {% set batteries = namespace(entities=[], available=[], standby=[]) %}
