@@ -15,6 +15,7 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 - Target range instead of one setpoint.  
  **v1.2**
 - Check SOC while script is running, (and not only at beginning)
+- Beter structure and naming of the settings.
 
 ## Marstek XOM Blueprint Requirements
 - **Marstek battery**  
