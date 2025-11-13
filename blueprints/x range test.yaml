@@ -142,10 +142,9 @@ blueprint:
       
         update_interval:
           name: Update interval
-          description: Time to wait before accepting new data from the grid sensor
-          default: 00:00:10
+          description: Time to wait before accepting new data from the grid sensor  
           selector:
-            duration: {}
+            duration: "00:00:10"
     
         update_timeout:
           name: Update timeout
