@@ -2,137 +2,178 @@ mode: single
 max_exceeded: silent
 
 blueprint:
-  name: Marstek X range on the Meter
-  description: Control  Marstek Battery`s according to a grid sensor and a target range (v1.1)
+  name: Marstek X range on the Meter TEST
+  description: > 
+    Control  Marstek Battery`s according to a grid sensor and a target range
+    
+    **Version**: 1.2
+    
+    **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
+
+    New: Checks the soc during running the script for min and max.
+    
+    Improved:Refactored min and max power setpoints, also new renamed.
+    
+    Improved: Structured and reordered the settings in sections.   
+    
+    Improved: set default interval and timeout time.
+
+  
   author: Tazzios (Based on PimDoos`s works)
   domain: automation
 
   input:
-    grid_entity:
-      name: Grid
-      description: Entity measuring grid net consumption
-      selector:
-        entity:
-          filter:
-            domain: sensor
-            device_class: power
 
-    battery_device:
-      name: Battery
-      description: Marstek Battery devices to control
-      selector:
-        device:
-          filter:
-            integration: esphome
-          multiple: true
+    battery_section:
+      name: Battery`s
+      icon: mdi:battery
+      input: 
+        battery_device:
+          name: Battery`s
+          description: Marstek Battery devices to control
+          selector:
+            device:
+              filter:
+                integration: esphome
+              multiple: true
+        battery_soc_min:
+          name: Minimum State of Charge
+          description: Batteries below this level will not participate in the load balancing pool
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 99
 
-    setpoint_smoothing_value:
-      name: Smoothing value
-      description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
-      default: 100
-      selector:
-        number:
-          min: 50
-          max: 2500
+        battery_soc_max:
+          name: Maximum State of Charge
+          description: Batteries above this level will not participate in the load balancing pool
+          default: 100
+          selector:
+            number:
+              min: 1
+              max: 100
+        setpoint_optimal_value:
+          name: Max optimal power
+          description: Amount of power required before loadbalancing to more batteries
+          default: 2000
+          selector:
+            number:
+              min: 50
+              max: 2500
+        priority_offset_template:
+          name: Priority offset template
+          description: Template defining a value to rotate battery priority by. Values higher than the number of batteries will loop back to 0.
+          default: "{{ now().day }}"
+          selector:
+            template:
+        # This value represents the minimum(aka charging) total setpoint for all batteries combined.
+        # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
+        setpoint_min:
+          name: Maximum Charge setpoint
+          description:  If this is 0, charging is disabled. Total setpoint for all batteries combined.
+          default: 12000
+          selector:
+            number:
+              min: 0
+              max: 12000
+              mode: box
 
-    setpoint_optimal_value:
-      name: Max optimal power
-      description: Amount of power required before loadbalancing to more batteries
-      default: 2000
-      selector:
-        number:
-          min: 50
-          max: 2500
+        setpoint_max:
+          name: Maximum Discharge setpoint
+          description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
+          default: 12000
+          selector:
+            number:
+              min: 0
+              max: 12000
+              mode: box  
 
-    setpoint_min:
-      name: Minimum power setpoint
-      description: Minimum total setpoint for all batteries combined. If this is 0 or higher, charging is disabled.
-      default: -12000
-      selector:
-        number:
-          min: -12000
-          max: 12000
-          mode: box
+    target_section:
+      name: Target
+      icon: mdi:target
+      description: Set min and max the same if you want a fixed target.
+      input:
+        grid_entity:
+          name: Grid
+          description: Entity measuring grid net consumption
+          selector:
+            entity:
+              filter:
+                domain: sensor
+                device_class: power
+        offset_entity:
+          name: Offset entities
+          description: Entities whose value (in Watts) should be subtracted from the grid sensor. E.g. Car charger power sensor
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                domain:
+                  - sensor
+                  - number
+                  - input_number
 
-    setpoint_max:
-      name: Maximum power setpoint
-      description: Minimum total setpoint for all batteries combined. If this is 0 or lower, discharging is disabled.
-      default: 12000
-      selector:
-        number:
-          min: -12000
-          max: 12000
-          mode: box
 
-    setpoint_target_min:
-      name: Target minimum value
-      description: Lower limit for the Grid target band (in Watts)
-      default: -200
-      selector:
-        number:
-          min: -5000
-          max: 5000
-          mode: box
+    setpoint_section:
+      name: Setpoint
+      icon: mdi:flash
+      input: 
+        setpoint_target_min:
+            name: Target minimum value
+            description: Lower limit for the Grid target band (in Watts)
+            default: -200
+            selector:
+              number:
+                min: -5000
+                max: 5000
+                mode: box
 
-    setpoint_target_max:
-      name: Target maximum value
-      description: Upper limit for the Grid target band (in Watts)
-      default: 200
-      selector:
-        number:
-          min: -5000
-          max: 5000
-          mode: box
+        setpoint_target_max:
+          name: Target maximum value
+          description: Upper limit for the Grid target band (in Watts)
+          default: 200
+          selector:
+            number:
+              min: -5000
+              max: 5000
+              mode: box           
 
-    offset_entity:
-      name: Offset entities
-      description: Entities whose value (in Watts) should be subtracted from the grid sensor. E.g. Car charger power sensor
-      default: []
-      selector:
-        entity:
-          multiple: true
-          filter:
-            domain:
-              - sensor
-              - number
-              - input_number
 
-    update_interval:
-      name: Update interval
-      description: Time to wait before accepting new data from the grid sensor
-      selector:
-        duration:
+    script_section:
+      name: script
+      icon: mdi:tune
+      input:
+        setpoint_smoothing_value:
+          name: Smoothing value
+          description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
+          default: 2000
+          selector:
+            number:
+              min: 50
+              max: 2500
+      
+        update_interval:
+          name: Update interval
+          description: Time to wait before accepting new data from the grid sensor  
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 10
+          selector:
+            duration: {}
+    
+        update_timeout:
+          name: Update timeout
+          description: Maximum time to wait for new data from the grid sensor 
+          default:
+            hours: 0
+            minutes: 1
+            seconds: 0
+          selector:
+            duration: {}
 
-    update_timeout:
-      name: Update timeout
-      description: Maximum time to wait for new data from the grid sensor
-      selector:
-        duration:
-
-    battery_soc_min:
-      name: Minimum State of Charge
-      description: Batteries below this level will not participate in the load balancing pool
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 99
-
-    battery_soc_max:
-      name: Maximum State of Charge
-      description: Batteries above this level will not participate in the load balancing pool
-      default: 100
-      selector:
-        number:
-          min: 1
-          max: 100
-
-    priority_offset_template:
-      name: Priority offset template
-      description: Template defining a value to rotate battery priority by. Values higher than the number of batteries will loop back to 0.
-      default: "{{ now().day }}"
-      selector:
-        template:
 
 variables:
   device_ids: !input battery_device
@@ -149,7 +190,14 @@ variables:
   offset_entity: !input offset_entity
   min_battery_level: !input battery_soc_min
   max_battery_level: !input battery_soc_max
-  min_setpoint: !input setpoint_min
+
+
+  # This makes 'min_setpoint' the opposite (negative) of the configured minimum setpoint.
+  # For example: if setpoint_min = 12000 → min_setpoint = -12000
+  setpoint_min_value: !input setpoint_min
+  min_setpoint: >
+    {{ 0 - (setpoint_min_value | float) }}
+
   max_setpoint: !input setpoint_max
 
 trigger:
@@ -206,13 +254,6 @@ action:
         {% endfor %}
         {{ entities.setpointdischarge[priority_offset:] + entities.setpointdischarge[:priority_offset] }}
 
-      battery_soc_entity: >
-        {% set entities = namespace(soc=[]) %}
-        {% for device_id in device_ids %}
-          {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search","_state_of_charge$") | list | join("")] %}
-        {% endfor %}
-        {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
-
       # Get grid power and convert to Watts
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
@@ -247,19 +288,23 @@ action:
             {{ target_diff }}
         {% endif %}
 
-  - variables:
+  - variables:      
       battery_setpoints: >
         {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
         {% set batteries = namespace(entities=[], available=[], standby=[]) %}
         {% for i in range(0,battery_count) %}
+          {# Haal de SOC entity direct op voor deze device #}
+          {% set soc_entity = device_entities(device_ids[i]) | list | select("search","_state_of_charge$") | list | first %}
+          {% set soc_value = states(soc_entity) | default(0) | int %}
+        
           {% if batteries.available | count < num_optimal 
              and states(battery_rs485_control_entity[i]) == "enable"
-             and (states(battery_soc_entity[i]) | int >= min_battery_level or setpoint < 0)
-             and (states(battery_soc_entity[i]) | int <= max_battery_level or setpoint > 0) %}
+             and (soc_value >= min_battery_level or setpoint < 0)
+             and (soc_value <= max_battery_level or setpoint > 0) %}  
             {% set batteries.available = batteries.available + [i] %}
           {% else %}
             {% set batteries.standby = batteries.standby + [i] %}
-          {% endif %}
+          {% endif %}									 		 
         {% endfor %}
         {% set divisor = (batteries.available | count) if (batteries.available | count) > 0 else 1 %}
         {% for i in batteries.available %}
