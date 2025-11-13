@@ -295,11 +295,11 @@ action:
 
   - variables:
       battery_current_soc: >
-      {% set soc_list = [] %}
-      {% for i in range(0, battery_count) %}
-        {% set soc_list = soc_list + [ states(battery_soc_entity[i]) | int ] %}
-      {% endfor %}
-      {{ soc_list }}
+        {% set soc_list = [] %}
+        {% for i in range(0, battery_count) %}
+          {% set soc_list = soc_list + [ states(battery_soc_entity[i]) | int ] %}
+        {% endfor %}
+        {{ soc_list }}
       
       battery_setpoints: >
         {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
