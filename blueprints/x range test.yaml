@@ -108,7 +108,7 @@ blueprint:
         # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
         setpoint_min:
           name: Maximum Charge setpoint
-          description:  If this is 0, charging is disabled. Minimum total setpoint for all batteries combined.
+          description:  If this is 0, charging is disabled. Total setpoint for all batteries combined.
           default: 12000
           selector:
             number:
@@ -118,7 +118,7 @@ blueprint:
 
         setpoint_max:
           name: Maximum Discharge setpoint
-          description: If this is 0, discharging is disabled.  Minimum total setpoint for all batteries combined.
+          description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
           default: 12000
           selector:
             number:
@@ -143,14 +143,20 @@ blueprint:
         update_interval:
           name: Update interval
           description: Time to wait before accepting new data from the grid sensor
-          default: 00:00:10
+          default: 
+            hours: 0
+            minutes: 0
+            seconds: 10
           selector:
             duration: {}
     
         update_timeout:
           name: Update timeout
           description: Maximum time to wait for new data from the grid sensor
-          default: 00:01:00
+          default: 
+            hours: 0
+            minutes: 1
+            seconds: 0
           selector:
             duration: {}
 
