@@ -2,7 +2,7 @@ mode: single
 max_exceeded: silent
 
 blueprint:
-  name: Marstek X range on the Meter TEST
+  name: Marstek X range on the Meter
   description: > 
     Control  Marstek Battery`s according to a grid sensor and a target range
     
