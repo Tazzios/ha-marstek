@@ -18,6 +18,8 @@ blueprint:
     
     Improved: set default interval and timeout time.
 
+    Fix:: unavailable offset entities won`t crash the script.
+
   
   author: Tazzios (Based on PimDoos`s works)
   domain: automation
