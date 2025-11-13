@@ -6,7 +6,9 @@ blueprint:
   description: > 
     Control Marstek Battery`s according to a grid sensor 
 
-    Please use the [Marstek X Range OM Blueprint](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/marstek%20x%20range%20om%20blueprint.yaml) which can do the same and has the followin benefits:  
+    **Deprecated**
+    
+    Please which to the [Marstek X Range OM Blueprint](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/marstek%20x%20range%20om%20blueprint.yaml) which can do the same and has the followin benefits:  
     
     Checks the soc DURING running the script for min and max
     
