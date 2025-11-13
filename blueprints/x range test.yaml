@@ -3,7 +3,15 @@ max_exceeded: silent
 
 blueprint:
   name: Marstek X range on the Meter TEST
-  description: Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
+  description: > 
+    Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
+    
+    **Version**: 1.2
+    Breaking: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
+
+    Refactored min and max power setpoints, also new renamed.
+    Structured and reordered the settings.
+    set default interval and timeout time.
 
   
   author: Tazzios (Based on PimDoos`s works)
@@ -79,6 +87,7 @@ blueprint:
     target_section:
       name: Target
       icon: mdi:target
+      description: Set min and max the same if you want a fixed target.
       input:
         grid_entity:
           name: Grid
