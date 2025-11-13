@@ -8,7 +8,7 @@ blueprint:
     
     **Version**: 1.2
     
-    **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
+    **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charging'
 
     New: Checks the soc during running the script for min and max.
     
