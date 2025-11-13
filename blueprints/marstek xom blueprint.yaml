@@ -10,7 +10,7 @@ blueprint:
     
     Please which to the [Marstek X Range OM Blueprint](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/marstek%20x%20range%20om%20blueprint.yaml) which can do the same and has the followin benefits:  
     
-    Checks the soc DURING running the script for min and max
+    Checks the soc DURING running the script for min and max.
     
     Structured and reordered the settings in sections.  
    
@@ -219,9 +219,10 @@ action:
       battery: >
         {{  battery_acpower_entity | map("states") | list | map('int') | sum }}
       offset: >
-        {% if offset_entity is string %}{% set offset_entity = [offset_entity] %}{% endif %}
-        {% set offset = offset + offset_entity | map("states") | map("int") | sum %}
-        {{ offset }}
+        {{ (offset_entity if offset_entity is iterable else [offset_entity] | default([])) 
+           | map('states') 
+           | map('int', 0) 
+           | sum }}
       setpoint: >
         {% set load = battery + grid %}
         {% set setpoint_target = load - offset %}
