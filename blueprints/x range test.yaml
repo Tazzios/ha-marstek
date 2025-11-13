@@ -4,6 +4,8 @@ max_exceeded: silent
 blueprint:
   name: Marstek X range on the Meter TEST
   description: Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
+
+  
   author: Tazzios (Based on PimDoos`s works)
   domain: automation
 
@@ -52,7 +54,27 @@ blueprint:
           default: "{{ now().day }}"
           selector:
             template:
-          
+        # This value represents the minimum(aka charging) total setpoint for all batteries combined.
+        # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
+        setpoint_min:
+          name: Maximum Charge setpoint
+          description:  If this is 0, charging is disabled. Total setpoint for all batteries combined.
+          default: 12000
+          selector:
+            number:
+              min: 0
+              max: 12000
+              mode: box
+
+        setpoint_max:
+          name: Maximum Discharge setpoint
+          description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
+          default: 12000
+          selector:
+            number:
+              min: 0
+              max: 12000
+              mode: box  
 
     target_section:
       name: Target
@@ -102,29 +124,7 @@ blueprint:
             number:
               min: -5000
               max: 5000
-              mode: box
-              
-        # This value represents the minimum(aka charging) total setpoint for all batteries combined.
-        # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
-        setpoint_min:
-          name: Maximum Charge setpoint
-          description:  If this is 0, charging is disabled. Total setpoint for all batteries combined.
-          default: 12000
-          selector:
-            number:
-              min: 0
-              max: 12000
-              mode: box
-
-        setpoint_max:
-          name: Maximum Discharge setpoint
-          description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
-          default: 12000
-          selector:
-            number:
-              min: 0
-              max: 12000
-              mode: box              
+              mode: box           
 
 
     script_section:
