@@ -7,7 +7,7 @@ blueprint:
     Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
     
     **Version**: 1.2
-    
+    a
     **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
 
     Refactored min and max power setpoints, also new renamed.
