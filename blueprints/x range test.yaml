@@ -4,17 +4,19 @@ max_exceeded: silent
 blueprint:
   name: Marstek X range on the Meter TEST
   description: > 
-    Control  Marstek Battery`s according to a grid sensor and a target range (v1.2)
+    Control  Marstek Battery`s according to a grid sensor and a target range
     
     **Version**: 1.2
-    e
+    
     **Breaking change**: 'Minimum power setpoint' is inverted and renamed to 'Maximum Charge'
 
-    Refactored min and max power setpoints, also new renamed.
+    New: Checks the soc during running the script for min and max.
     
-    Structured and reordered the settings.
+    Improved:Refactored min and max power setpoints, also new renamed.
     
-    set default interval and timeout time.
+    Improved: Structured and reordered the settings in sections.   
+    
+    Improved: set default interval and timeout time.
 
   
   author: Tazzios (Based on PimDoos`s works)
