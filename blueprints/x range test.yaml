@@ -294,14 +294,21 @@ action:
         {% endif %}
 
   - variables:
+      battery_current_soc: >
+      {% set soc_list = [] %}
+      {% for i in range(0, battery_count) %}
+        {% set soc_list = soc_list + [ states(battery_soc_entity[i]) | int ] %}
+      {% endfor %}
+      {{ soc_list }}
+      
       battery_setpoints: >
         {% set num_optimal = ((setpoint | abs) / optimal_max_power) | round(0,'ceil') %}
         {% set batteries = namespace(entities=[], available=[], standby=[]) %}
         {% for i in range(0,battery_count) %}
           {% if batteries.available | count < num_optimal 
              and states(battery_rs485_control_entity[i]) == "enable"
-             and (states(battery_soc_entity[i]) | int >= min_battery_level or setpoint < 0)
-             and (states(battery_soc_entity[i]) | int <= max_battery_level or setpoint > 0) %}   
+             and (battery_current_soc[i] >= min_battery_level or setpoint < 0)
+             and (battery_current_soc[i] <= max_battery_level or setpoint > 0)%}   
             {% set batteries.available = batteries.available + [i] %}
           {% else %}
             {% set batteries.standby = batteries.standby + [i] %}
