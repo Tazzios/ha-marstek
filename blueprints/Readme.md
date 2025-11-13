@@ -1,7 +1,7 @@
 
 
 # Marstek X Range OM Blueprint 
-This Home Assistant automation controls Marstek batteries according to a **grid sensor**, managing **charging, discharging, and load balancing** across multiple batteries. It ensures that batteries operate efficiently within set limits and adjusts setpoints dynamically based on grid consumption, battery SOC, and optional offsets.  
+This Home Assistant automation controls Marstek batteries according to a **grid sensor**, managing **charging, discharging, and load balancing** across multiple batteries. It ensures that batteries operate efficiently within set limits and adjusts setpoint range dynamically based on grid consumption, battery SOC, and optional offsets.  
 Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-sessy-examples/tree/main)  
 
 > **XOM** stands for **X on the Meter**, an alternative to NOM (which stands for Nul op de Meter).
@@ -17,7 +17,7 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 - Check SOC while script is running, (and not only at beginning)
 - Beter structure and naming of the settings.
 
-## Marstek XOM Blueprint Requirements
+## Requirements
 - **Marstek battery**  
 - **Lilygo with ESPHome**  
   - Repository: [MarstekVenus-LilygoRS485](https://github.com/Superduper1969/MarstekVenus-LilygoRS485)  
