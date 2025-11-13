@@ -12,7 +12,7 @@ blueprint:
 
     New: Checks the soc during running the script for min and max.
     
-    Improved:Refactored min and max power setpoints, also new renamed.
+    Improved: Refactored min and max power setpoints, also new renamed.
     
     Improved: Structured and reordered the settings in sections.   
     
@@ -265,8 +265,10 @@ action:
       battery: >
         {{  battery_acpower_entity | map("states") | list | map('int') | sum }}
       offset_total: >
-        {% if offset_entity is string %}{% set offset_entity = [offset_entity] %}{% endif %}
-        {{ offset_entity | map("states") | map("int") | sum }}
+        {{ (offset_entity if offset_entity is iterable else [offset_entity] | default([])) 
+         | map('states') 
+         | map('int', 0) 
+         | sum }}
 
       setpoint: >
         {% set net_load = battery + grid %}
