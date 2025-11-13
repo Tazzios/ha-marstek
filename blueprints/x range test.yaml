@@ -45,7 +45,7 @@ blueprint:
           selector:
             template:
 
-    setpoint_section:
+    target_section:
       name: Target settings
       icon: mdi:target
       input:
