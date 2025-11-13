@@ -104,18 +104,20 @@ blueprint:
               max: 5000
               mode: box
               
+        # This value represents the minimum(aka charging) total setpoint for all batteries combined.
+        # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
         setpoint_min:
-          name: Charge setpoint
+          name: Maximum Charge setpoint
           description:  If this is 0, charging is disabled. Minimum total setpoint for all batteries combined.
-          default: -12000
+          default: 12000
           selector:
             number:
-              min: -12000
-              max: 0
+              min: 0
+              max: 12000
               mode: box
 
         setpoint_max:
-          name: Discharge setpoint
+          name: Maximum Discharge setpoint
           description: If this is 0, discharging is disabled.  Minimum total setpoint for all batteries combined.
           default: 12000
           selector:
@@ -169,7 +171,14 @@ variables:
   offset_entity: !input offset_entity
   min_battery_level: !input battery_soc_min
   max_battery_level: !input battery_soc_max
-  min_setpoint: !input setpoint_min
+
+
+  # This makes 'min_setpoint' the opposite (negative) of the configured minimum setpoint.
+  # For example: if setpoint_min = 12000 → min_setpoint = -12000
+  setpoint_min_value: !input setpoint_min
+  min_setpoint: >
+    {{ 0 - (setpoint_min_value | float) }}
+
   max_setpoint: !input setpoint_max
 
 trigger:
