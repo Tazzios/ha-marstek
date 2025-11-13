@@ -82,8 +82,7 @@ blueprint:
 
     setpoint_section:
       name: Setpoint
-      icon: mdi:cat
-      description: can this?
+      icon: mdi:flash
       input: 
         setpoint_target_min:
             name: Target minimum value
@@ -105,55 +104,53 @@ blueprint:
               max: 5000
               mode: box
               
-
-    script_section:
-      name: script
-      icon: mdi:cat
-      input:
-        setpoint_smoothing_value:
-          name: Smoothing value
-          description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
-          default: 100
-          selector:
-            number:
-              min: 50
-              max: 2500
-
         setpoint_min:
-          name: Minimum power setpoint
-          description: Minimum total setpoint for all batteries combined. If this is 0 or higher, charging is disabled.
+          name: Charge setpoint
+          description:  If this is 0, charging is disabled. Minimum total setpoint for all batteries combined.
           default: -12000
           selector:
             number:
               min: -12000
-              max: 12000
+              max: 0
               mode: box
 
         setpoint_max:
-          name: Maximum power setpoint
-          description: Minimum total setpoint for all batteries combined. If this is 0 or lower, discharging is disabled.
+          name: Discharge setpoint
+          description: If this is 0, discharging is disabled.  Minimum total setpoint for all batteries combined.
           default: 12000
           selector:
             number:
-              min: -12000
+              min: 0
               max: 12000
-              mode: box
+              mode: box              
+
+
+    script_section:
+      name: script
+      icon: mdi:tune
+      input:
+        setpoint_smoothing_value:
+          name: Smoothing value
+          description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
+          default: 2000
+          selector:
+            number:
+              min: 50
+              max: 2500
       
         update_interval:
           name: Update interval
           description: Time to wait before accepting new data from the grid sensor
           default: 00:00:10
           selector:
-            duration: 
+            duration: {}
     
         update_timeout:
           name: Update timeout
           description: Maximum time to wait for new data from the grid sensor
           default: 00:01:00
           selector:
-            duration:
-
-
+            duration: {}
 
 
 
