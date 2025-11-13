@@ -10,7 +10,7 @@ blueprint:
   input:
 
     battery_section:
-      name: Battery selection
+      name: Battery`s
       icon: mdi:battery
       input: 
         battery_device:
@@ -38,17 +38,34 @@ blueprint:
             number:
               min: 1
               max: 100
+        setpoint_optimal_value:
+          name: Max optimal power
+          description: Amount of power required before loadbalancing to more batteries
+          default: 2000
+          selector:
+            number:
+              min: 50
+              max: 2500
         priority_offset_template:
           name: Priority offset template
           description: Template defining a value to rotate battery priority by. Values higher than the number of batteries will loop back to 0.
           default: "{{ now().day }}"
           selector:
             template:
+          
 
     target_section:
-      name: Target settings
+      name: Target
       icon: mdi:target
       input:
+        grid_entity:
+          name: Grid
+          description: Entity measuring grid net consumption
+          selector:
+            entity:
+              filter:
+                domain: sensor
+                device_class: power
         offset_entity:
           name: Offset entities
           description: Entities whose value (in Watts) should be subtracted from the grid sensor. E.g. Car charger power sensor
@@ -61,19 +78,12 @@ blueprint:
                   - sensor
                   - number
                   - input_number
-        grid_entity:
-          name: Grid
-          description: Entity measuring grid net consumption
-          selector:
-            entity:
-              filter:
-                domain: sensor
-                device_class: power
 
 
     setpoint_section:
-      name: Setpoint settings
+      name: Setpoint
       icon: mdi:cat
+      description: can this?
       input: 
         setpoint_target_min:
             name: Target minimum value
@@ -94,19 +104,16 @@ blueprint:
               min: -5000
               max: 5000
               mode: box
+              
+
+    script_section:
+      name: script
+      icon: mdi:cat
+      input:
         setpoint_smoothing_value:
           name: Smoothing value
           description: Maximum delta between two setpoints. This should not be lower than the Minimum Power of the battery.
           default: 100
-          selector:
-            number:
-              min: 50
-              max: 2500
-
-        setpoint_optimal_value:
-          name: Max optimal power
-          description: Amount of power required before loadbalancing to more batteries
-          default: 2000
           selector:
             number:
               min: 50
@@ -131,21 +138,20 @@ blueprint:
               min: -12000
               max: 12000
               mode: box
-
-
-
-
-    update_interval:
-      name: Update interval
-      description: Time to wait before accepting new data from the grid sensor
-      selector:
-        duration:
-
-    update_timeout:
-      name: Update timeout
-      description: Maximum time to wait for new data from the grid sensor
-      selector:
-        duration:
+      
+        update_interval:
+          name: Update interval
+          description: Time to wait before accepting new data from the grid sensor
+          default: 00:00:10
+          selector:
+            duration: 
+    
+        update_timeout:
+          name: Update timeout
+          description: Maximum time to wait for new data from the grid sensor
+          default: 00:01:00
+          selector:
+            duration:
 
 
 
