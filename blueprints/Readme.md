@@ -12,7 +12,7 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 - Optional offsets for other power consumers (e.g., EV chargers)  
 - Smooth transitions between setpoints to prevent sudden battery stress  
 - Rotates battery priority to ensure equal usage over time
-- Target range instead of one setpoint. 
+- Target range instead of one setpoint.  
  **v1.2**
 - Check SOC while script is running, (and not only at beginning)
 
