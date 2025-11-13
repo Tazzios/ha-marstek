@@ -70,7 +70,7 @@ blueprint:
         # This value represents the minimum(aka charging) total setpoint for all batteries combined.
         # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.    
         setpoint_min:
-          name: Maximum Charge setpoint
+          name: Maximum charging
           description:  If this is 0, charging is disabled. Total setpoint for all batteries combined.
           default: 12000
           selector:
@@ -80,7 +80,7 @@ blueprint:
               mode: box
 
         setpoint_max:
-          name: Maximum Discharge setpoint
+          name: Maximum discharging
           description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
           default: 12000
           selector:
