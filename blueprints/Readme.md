@@ -6,6 +6,8 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 
 > **XOM** stands for **X on the Meter**, an alternative to NOM (which stands for Nul op de Meter).
 
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FTazzios%2Fha-marstek%2Fblob%2Fmain%2Fblueprints%2Fmarstek%2520x%2520range%2520om%2520blueprint.yaml)
+
 ## Key Features
 - Dynamic load balancing across multiple batteries  
 - SOC-based inclusion/exclusion for optimal battery health  
