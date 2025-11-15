@@ -1,7 +1,7 @@
 
 
 # Marstek X Range OM Blueprint 
-This Home Assistant automation controls Marstek batteries according to a **grid sensor**, managing **charging, discharging, and load balancing** across multiple batteries. It ensures that batteries operate efficiently within set limits and adjusts setpoint range dynamically based on grid consumption, battery SOC, and optional offsets.  
+This Home Assistant automation controls Marstek batteries according to a **grid sensor**, managing **charging, discharging, and load balancing** across multiple batteries. It ensures that batteries operate efficiently within set limits and adjusts setpoint range dynamically based on grid consumption, battery SOC, and optional offsets. But it can also be used to normal load or unload your batteries 
 Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-sessy-examples/tree/main)  
 
 > **XOM** stands for **X on the Meter**, an alternative to NOM (which stands for Nul op de Meter).
@@ -31,7 +31,11 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 
 Example:  
 - If your fuse can handle a maximum of 2300 W, set a  range from -2300 to 2300.
-- you do not want you battery to which between charging and disharging, set range to -100 and 200. 
+- you do not want you battery to which between charging and disharging, set range to -100 and 200.
+
+
+<img width="753" height="1371" alt="marstek xom" src="https://github.com/user-attachments/assets/4031e21e-133b-484f-a4da-37aecafb0895" />
+
 
 
 # Marstek XOM Blueprint
