@@ -3,9 +3,9 @@ blueprint:
   description: >
     Control  Marstek Batteries according to a grid sensor and a target range  
     
-    **Version: 1.9 **
+    **Version: 1.9.1 **
 
-    New: [marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support
+    New: discharge between time range
 
 
     
@@ -232,6 +232,25 @@ blueprint:
           selector:
             boolean: {}
 
+    # added 20260204 1154 RB-3D        
+    time_section:
+      name: Discharge time window
+      icon: mdi:clock-outline
+      input:
+        discharge_after:
+          name: Discharge after
+          description: Battery may discharge after this time
+          default: "21:00:00"
+          selector:
+            time:
+
+        discharge_before:
+          name: Discharge before
+          description: Battery may discharge before this time
+          default: "07:00:00"
+          selector:
+            time:
+
 
 variables:
   # Batttery selection
@@ -271,7 +290,11 @@ variables:
   
   # Script
   debug: !input debug
-  
+
+  # added 20260204 1154 RB-3D   
+  # Time
+  discharge_after: !input discharge_afther
+  discharge_before: !input discharge_before
 
 trigger:
   - trigger: state
@@ -282,6 +305,16 @@ trigger:
 action:
   # calculate setpoint
   - variables:
+      # added 20260204 1154 RB-3D 
+      # discharge allowed
+      discharge_allowed: >
+        {% set now_t = now().strftime('%H:%M:%S') %}
+        {% if discharge_after < discharge_before %}
+          {{ discharge_after <= now_t < discharge_before }}
+        {% else %}
+          {{ now_t >= discharge_after or now_t < discharge_before }}
+        {% endif %}
+
       # Get grid power and convert to Watts
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
@@ -313,12 +346,14 @@ action:
         {% set net_load = Battery_ac_power_total + grid %}
         {% if net_load < target_min %}
           {# te veel export -> laad batterij #}
-          {% set target = (net_load - offset_total ) - target_min %}
+          {% set target = (net_load - offset_total ) - target_min %}  
         {% elif net_load > target_max %}
           {# te veel import -> ontlaad batterij #}
-          {% set target = (net_load - offset_total) - target_max %}
-        {% else %}
-          {% set target = 0 - offset_total%}
+          {% if discharge_allowed %}
+            {% set target = (net_load - offset_total) - target_max %}
+          {% else %}
+            {% set target = 0 %}
+          {% endif %}
         {% endif %}
 
 
