@@ -1,3 +1,6 @@
+Version 1.9.1
+>RB-3D>> add lock for discharge between times
+
 Version: 1.9  
 New: [HA integration marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support  
 
