@@ -376,27 +376,31 @@ action:
         {% if device_ids is string %}
             {% set device_ids = [ device_ids ] %}
         {% endif %}
-        
-        {% set soc_map = namespace(list=[]) %}
-        {% for dev in device_ids %}
-          {% set soc_entity = device_entities(dev) | select("search", "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$") | list %}
-          {% if soc_entity %}
-            {% set soc_value = states(soc_entity[0]) | int %}
-            {% if setpoint < 0 %}
-              {# Laden: afronden SOC naar boven op tientallen #}
-              {% set soc_rounded = ((soc_value + 9) // 10) * 10 %}
-            {% else %}
-              {# Ontladen: afronden SOC naar beneden op tientallen #}
-              {% set soc_rounded = (soc_value // 10) * 10 %}
-            {% endif %}   
-            {% set soc_map.list = soc_map.list + [[soc_rounded, dev]] %}
+
+        {% if sort_by_soc  %}
+          {% set soc_map = namespace(list=[]) %}
+          {% for dev in device_ids %}
+            {% set soc_entity = device_entities(dev) | select("search", "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$") | list %}
+            {% if soc_entity %}
+              {% set soc_value = states(soc_entity[0]) | int %}
+              {% if setpoint < 0 %}
+                {# Laden: afronden SOC naar boven op tientallen #}
+                {% set soc_rounded = ((soc_value + 9) // 10) * 10 %}
+              {% else %}
+                {# Ontladen: afronden SOC naar beneden op tientallen #}
+                {% set soc_rounded = (soc_value // 10) * 10 %}
+              {% endif %}   
+              {% set soc_map.list = soc_map.list + [[soc_rounded, dev]] %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if setpoint < 0 %} 
+            {{ soc_map.list | sort(attribute=0) | map('last') | list }}
+          {% else %}
+            {{ soc_map.list | sort(attribute=0, reverse=True) | map('last') | list }}
           {% endif %}
-        {% endfor %}
-        
-        {% if setpoint < 0 %} 
-          {{ soc_map.list | sort(attribute=0) | map('last') | list }}
         {% else %}
-          {{ soc_map.list | sort(attribute=0, reverse=True) | map('last') | list }}
+          {{ device_ids }}
         {% endif %}
 
       battery_count: >
