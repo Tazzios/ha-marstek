@@ -17,7 +17,9 @@ Based on the work of PimDoos: [HA Sessy Examples](https://github.com/PimDoos/ha-
 - Minimum and maximum power option.
 - Smooth transitions, minimum and maximum different in setpoint changes.
 - Smooth transitions, Smoothing factor above adjustable level.
-- Smooth transitions, seperate smoothing factor when passing zero.  
+- Smooth transitions, seperate smoothing factor when passing zero.
+- Start condition, Set a start condition before the script is allowed to run
+- Setpoint template, Do you not want to follow the grid and do something custom?   
 
 
 ## Requirements
@@ -41,5 +43,5 @@ or other ESPHOME software that has the following entities endig with in home ass
   - `forcible_discharge_power`  
   - `state_of_charge`
    
-<img width="1044" height="2700" alt="afbeelding" src="https://github.com/user-attachments/assets/3df0eab8-e75f-4501-8fe3-ad80615df4d8" />
+<img width="1044"  alt="Marstek XOM 2 0" src="https://github.com/user-attachments/assets/0f1e73fd-308e-4ece-9f8b-b71fc2fe4a7a" />
 
