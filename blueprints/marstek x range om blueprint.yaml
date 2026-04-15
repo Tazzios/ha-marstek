@@ -1,18 +1,22 @@
 blueprint:
   name: Marstek X range on the Meter
   description: >
-    Control  Marstek Batteries according to a grid sensor and a target range  
+      Conntrol  Marstek Batteries according to a grid sensor and a target range 
     
-    **Version: 1.9 **
-
-    New: [marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support
-
-
-    
-
-
-
-  
+      Version: 2.0
+      
+      New: setpoint template  
+      
+      New: start condition
+      
+      Fix: sort by soc was always applied 
+      
+      Improved: code, split max difference and absolute limit
+      
+      Improved: code, search enitities in one place
+        
+      📘 More info  
+      https://github.com/Tazzios/ha-marstek/tree/main/blueprints
 
   author: Tazzios (Based on PimDoos`s works)                   
   domain: automation
@@ -140,7 +144,13 @@ blueprint:
                   - sensor
                   - number
                   - input_number
-
+        setpoint_template:
+          name: setpoint template
+          description: optional, custom code to change the target setpoint.
+          default: "{{ corrected_net_load }}"
+          selector:
+            template:
+            
     setpoint_section:
       name: Setpoint
       description: You can create a deadband (-50 and 50) or set them the same if you want a fixed target. High value for charging and negative value for discharging.
@@ -218,6 +228,21 @@ blueprint:
       name: Script
       icon: mdi:tune
       input:
+        start_condition:
+          name: Start conditions
+          description: "optional, conditions to be met before starting this automation. "
+          selector:
+            condition:
+        stop_action:
+          name: Stop action
+          description: "action when start condition is not met."
+          default: "Run script with setpoint 0"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - "Run script with setpoint 0"
+                - "Do not run the script"
         update_interval:
           name: Update interval
           description: Time to wait before accepting new data from the grid sensor                                                                                
@@ -257,6 +282,8 @@ variables:
   # Target
   grid_entity: !input grid_entity
   offset_entity: !input offset_entity
+  # input offset_template is direcly used
+  
   
   # Setpoint
   target_min: !input setpoint_target_min
@@ -270,7 +297,18 @@ variables:
   smoothing_factor_zero: !input smoothing_factor_zero
   
   # Script
+  start_condition: !input start_condition
+  stop_action: !input stop_action
   debug: !input debug
+  
+  #Entity Search Values for the different integrations.
+  # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De
+  esv_ac_power: '(ac_power|ac_vermogen|AC-Leistung)$'
+  esv_soc: '(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$'
+  esv_rs485: '(rs485_control_mode|rs485_control_mode|rs485_besturingsmodus|rs485_steuermodus)$'
+  esv_mode: '(forcible_charge_discharge|force_mode|geforceerde_modus|force_mode)$'
+  esv_setpointcharge: '(forcible_charge_power|set_forcible_charge_power|forceer_laadvermogen|ladeleistung_einstellen)$'
+  esv_setpointdischarge: '(forcible_discharge_power|set_forcible_discharge_power|forceer_ontlaadvermogen|entladeleistung_einstellen)$'
   
 
 trigger:
@@ -279,8 +317,10 @@ trigger:
   - trigger: homeassistant
     event: start
 
+
 action:
-  # calculate setpoint
+
+  # calculate setpoint data
   - variables:
       # Get grid power and convert to Watts
       grid: >
@@ -300,7 +340,7 @@ action:
         {% set total_ac_power = namespace(value=0) %}
         
         {% for dev in device_ids %}
-          {% set ac_entity = device_entities(dev) | select("search","(ac_power|ac_vermogen)$") | list %}
+          {% set ac_entity = device_entities(dev) | select("search", esv_ac_power ) | list %}
           {% if ac_entity %}
             {% set ac_value = states(ac_entity[0]) | float(0) %}
             {% set total_ac_power.value = total_ac_power.value + ac_value %}
@@ -308,50 +348,101 @@ action:
         {% endfor %}
         
         {{ total_ac_power.value }}
-
-      setpoint: >
-        {% set net_load = Battery_ac_power_total + grid %}
-        {% if net_load < target_min %}
-          {# te veel export -> laad batterij #}
-          {% set target = (net_load - offset_total ) - target_min %}
-        {% elif net_load > target_max %}
-          {# te veel import -> ontlaad batterij #}
-          {% set target = (net_load - offset_total) - target_max %}
-        {% else %}
-          {% set target = 0 - offset_total%}
-        {% endif %}
+      
+    # setpoint
+      setpoint: > 
+        {{ 0 }}
 
 
-        {# --- minimale verschil in watts --- #}
-        {% if (target - Battery_ac_power_total) | abs < smoothing_min_watts %}
-          {% set raw_setpoint = Battery_ac_power_total %}
-        {% else %}
-          {% set raw_setpoint = target %}
-        {% endif %}
 
-        {# --- maximale stap begrenzen in watts --- #}
-        {% if raw_setpoint != 0 %}
-          {% set raw_setpoint = [raw_setpoint, Battery_ac_power_total - smoothing_max_watts, min_setpoint] | max %}
-          {% set raw_setpoint = [raw_setpoint, Battery_ac_power_total + smoothing_max_watts, max_setpoint] | min %}
-        {% else %}
-          {% set raw_setpoint = 0 %}
-        {% endif %}
+    # start_condition false with hard stop, setpoint 0 stop is implecit
+  - choose:
+    - conditions:
+        - condition: template
+          value_template: "{{ stop_action == 'Do not run the script' }}"
+        # important NOT
+        - condition: not
+          conditions:
+            - condition: or
+              conditions:
+                # No start_condition set
+                - condition: template
+                  value_template: "{{ start_condition is none }}"
+                # start_condition is true
+                - condition: !input start_condition
+      sequence:
+        - stop: "Stopped by stop_action"
+  # start_condition true         
+  - choose:
+    - conditions:
+        - condition: or
+          conditions:
+            # No start_condition set
+            - condition: template
+              value_template: "{{ start_condition is none }}"
+            # start_condition is true
+            - condition: !input start_condition
 
-        {# --- nul-kruising detecteren en juiste smoothing factor kiezen --- #}
-        {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or  (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
-          {% set sf = smoothing_factor_zero  %}
-        {% elif raw_setpoint > smoothing_above %}
-          {% set sf = smoothing_factor %} 
-        {% else %}
-          {% set sf = 1 %} 
-        {% endif %}
-         
-        {# --- exponentiële smoothing toepassen --- #}
-        {% set setpoint_smooth = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
+      sequence:
+        - variables:
+              
+              corrected_net_load: >
+                {% set net_load = Battery_ac_power_total + grid %}
+                {{ net_load - offset_total }} 
+              setpoint_template: !input setpoint_template
+              
+              setpoint: >
+                {# set net_load = Battery_ac_power_total + grid #}
+                {# set corrected_net_load = net_load - offset_total #}
+              
+              
+                {# --- apply offset template if valid ---#}
+                {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
+                
+                
+                {# --- determine target setpoint ---- #}
+                {% set target = 0 %}
+                {% if corrected_net_load < target_min %}
+                  {# te veel export -> laad batterij #}
+                  {% set target = corrected_net_load  - target_min %}
+                {% elif corrected_net_load > target_max %}
+                  {# te veel import -> ontlaad batterij #}
+                  {% set target = corrected_net_load - target_max %}
+                {% endif %}
+                
+                
+                {# --- minimal difference --- #}
+                {% if (target - Battery_ac_power_total) | abs < smoothing_min_watts %}
+                  {% set raw_setpoint = Battery_ac_power_total %}
+                {% else %}
+                  {% set raw_setpoint = target %}
+                {% endif %}
         
-        {{ setpoint_smooth | round(0) }}
+                {# --- maximal difference --- #}
+                {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
+                {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
+        
+        
+                {# --- absolute limits --- #}
+                {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
+                {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
+                
+        
+                {# --- crossing zero detection and smoothing --- #}
+                {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or  (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
+                  {% set sf = smoothing_factor_zero  %}
+                {% elif raw_setpoint > smoothing_above %}
+                  {% set sf = smoothing_factor %} 
+                {% else %}
+                  {% set sf = 1 %} 
+                {% endif %}
+                 
+                {# --- exponential smoothing --- #}
+                {% set setpoint_smooth = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
+                
+                {{ setpoint_smooth | round(0) }}
 
-         
+
          
   - choose:
         - conditions:
@@ -362,7 +453,7 @@ action:
               data:
                 name: "Debug"
                 message: >
-                  grid: {{ grid }}
+                  grid: {{ grid }} 
                   offset_total: {{ offset_total }}
                   Battery_ac_power_total: {{ Battery_ac_power_total }}
                   setpoint: {{ setpoint }}
@@ -371,16 +462,13 @@ action:
         
   # order devices       
   - variables:
-      # Hernoemen naar reordeed ofzo
+      # Sort by soc
       device_ids: >
-        {% if device_ids is string %}
-            {% set device_ids = [ device_ids ] %}
-        {% endif %}
 
         {% if sort_by_soc  %}
           {% set soc_map = namespace(list=[]) %}
           {% for dev in device_ids %}
-            {% set soc_entity = device_entities(dev) | select("search", "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$") | list %}
+            {% set soc_entity = device_entities(dev) | select("search", esv_soc) | list %}
             {% if soc_entity %}
               {% set soc_value = states(soc_entity[0]) | int %}
               {% if setpoint < 0 %}
@@ -402,21 +490,18 @@ action:
         {% else %}
           {{ device_ids }}
         {% endif %}
-
-      battery_count: >
-         {% if device_ids is string %}
-            {% set ids = [device_ids] %}
-          {% else %}
-            {% set ids = device_ids %}
-          {% endif %}
-          {{ ids | count }}
-          
+        
+      # sort by offset
       priority_offset: >
         {% if sort_by_soc  %}
             {{ 0 }}
         {% else%}
             {{ priority_offset_template % battery_count }}
         {% endif %}
+
+      battery_count: >
+          {{ device_ids | count }}
+          
 
   - choose:
         - conditions:
@@ -435,39 +520,38 @@ action:
   # Battery entities into an array        
   - variables:
       # Get Entity IDs from device IDs
-      # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De
       battery_rs485_control_entity: >
         {% set entities = namespace(rs485_control=[]) %}
         {% for device_id in device_ids %}
-          {% set entities.rs485_control = entities.rs485_control + [device_entities(device_id) | list | select("search","(rs485_control_mode|rs485_control_mode|rs485_besturingsmodus|rs485_steuermodus)$") | list | join("")] %}
+          {% set entities.rs485_control = entities.rs485_control + [device_entities(device_id) | list | select("search", esv_rs485) | list | join("")] %}
         {% endfor %}
         {{ entities.rs485_control[priority_offset:] + entities.rs485_control[:priority_offset] }}
 
       battery_mode_entity: >
         {% set entities = namespace(mode=[]) %}
         {% for device_id in device_ids %}
-          {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search","(forcible_charge_discharge|force_mode|geforceerde_modus|force_mode)$") | list | join("")] %}
+          {% set entities.mode = entities.mode + [device_entities(device_id) | list | select("search", esv_mode) | list | join("")] %}
         {% endfor %}
         {{ entities.mode[priority_offset:] + entities.mode[:priority_offset] }}
         
       battery_setpointcharge_entity: >
         {% set entities = namespace(setpointcharge=[]) %}
         {% for device_id in device_ids %}
-          {% set entities.setpointcharge = entities.setpointcharge + [device_entities(device_id) | list | select("search","(forcible_charge_power|set_forcible_charge_power|forceer_laadvermogen|ladeleistung_einstellen)$") | list | join("")] %}
+          {% set entities.setpointcharge = entities.setpointcharge + [device_entities(device_id) | list | select("search", esv_setpointcharge) | list | join("")] %}
         {% endfor %}
         {{ entities.setpointcharge[priority_offset:] + entities.setpointcharge[:priority_offset] }}
 
       battery_setpointdischarge_entity: >
         {% set entities = namespace(setpointdischarge=[]) %}
         {% for device_id in device_ids %}
-          {% set entities.setpointdischarge = entities.setpointdischarge + [device_entities(device_id) | list | select("search","(forcible_discharge_power|set_forcible_discharge_power|forceer_ontlaadvermogen|entladeleistung_einstellen)$") | list | join("")] %}
+          {% set entities.setpointdischarge = entities.setpointdischarge + [device_entities(device_id) | list | select("search", esv_setpointdischarge) | list | join("")] %}
         {% endfor %}
         {{ entities.setpointdischarge[priority_offset:] + entities.setpointdischarge[:priority_offset] }}
 
       battery_soc_entity: >
         {% set entities = namespace(soc=[]) %}
         {% for device_id in device_ids %}
-          {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search","(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$") | list | join("")] %}
+          {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search", esv_soc) | list | join("")] %}
         {% endfor %}
         {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
 
