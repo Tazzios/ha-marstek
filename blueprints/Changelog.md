@@ -1,3 +1,10 @@
+Version 2.0  
+New: setpoint template  
+New: start condition  
+Fix: sort by soc was always applied  
+Improved: code, split max difference and absolute limit  
+Improved: code, search enitities in one place  
+  
 Version: 1.9  
 New: [HA integration marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support  
 
