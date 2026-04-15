@@ -231,6 +231,7 @@ blueprint:
         start_condition:
           name: Start conditions
           description: "optional, conditions to be met before starting this automation. "
+          default: []
           selector:
             condition:
         stop_action:
