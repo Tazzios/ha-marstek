@@ -84,16 +84,15 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 ## Key Concepts
 
 ### Deadband Example
-With `target_min = -200W` and `target_max = 200W`:
+With `Target minimum value` = -200W and `Target maximum value` = 200W:
 - Grid exports 0-200W → no action (within band)
 - Grid exports 250W → batteries discharge to return to band
 - Grid imports 0-200W → no action (within band)
 - Grid imports 250W → batteries charge to return to band
 
 ### Smoothing Formula
-When crossing zero with `smoothing_factor_zero = 0.3`:
+When crossing zero with `smoothing factor when passing zero` = 0.3:
 new_setpoint = (0.3 × raw_setpoint) + (0.7 × battery_current_power)
-
 
 **Example:**
 - Current battery power: -1000W (charging)
@@ -102,13 +101,13 @@ new_setpoint = (0.3 × raw_setpoint) + (0.7 × battery_current_power)
 - Result: Gradual transition from -1000W to +500W instead of immediate switch
 
 ### Load Balancing Example
-With `optimal_balancing = 2000W` and 3 batteries:
+With `Max optimal power` = 2000W, `Battery maximum power` = 2500W and 3 batteries:
 - 1500W load → uses 1 battery at 1500W
 - 4000W load → distributes across 2 batteries (2000W each)
-- 6000W load → distributes across 3 batteries (2000W each)
+- 6600W load → distributes across 3 batteries (2200W each)
 
 ### SoC Sorting Example
-With `sort_by_soc` on 10% and `setpoint < 0` (charging):
+With `Order by State of Charge` on 10% and `setpoint < 0` (charging):
 - Battery A: 80% SoC (rounded to 80%)
 - Battery B: 42% SoC (rounded to 40%)
 - Battery C: 68% SoC (rounded to 70%)
