@@ -1,0 +1,114 @@
+# Marstek X Range on the Meter - Blueprint Input Fields Documentation
+
+## Overview
+Complete reference guide for all configuration inputs in the Marstek battery control blueprint.
+
+---
+
+## Battery Selection Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **battery_device** | Select one or more Marstek Battery devices to control. Supports ESPHome and Marstek Modbus integrations. Multiple devices can be selected for load balancing. | Select "Marstek Battery (Living Room)" and "Marstek Battery (Garage)" |
+| **battery_soc_min** | Minimum State of Charge (%) - Batteries below this level won't participate in load balancing during discharge. Prevents over-discharging. Range: 0-99% | Set to 20 to prevent discharging below 20% SoC |
+| **battery_soc_max** | Maximum State of Charge (%) - Batteries above this level won't participate in load balancing during charge. Prevents over-charging. Range: 1-100% | Set to 90 to stop charging when batteries reach 90% SoC |
+
+---
+
+## Battery Rotation Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **sort_by_soc** | When enabled (default: true), orders batteries by State of Charge so they stay within 10% of each other. Overrides priority offset template for balanced aging. | Enable (true) for automatic SoC balancing; disable (false) for fixed priority order |
+| **priority_offset_template** | Template to rotate battery priority based on a calculated value. Only used if "Keep SOCs within 10%" is disabled. Uses modulo operation to wrap values. | `{{ now().timetuple().tm_yday }}` (rotates daily) or `{{ now().hour }}` (rotates hourly) |
+
+---
+
+## Power Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **battery_optimal_min** | Minimum power (W) required to activate a single battery for charge or discharge. Prevents inefficient small power operations. Range: 0-2500W | Set to 50 to avoid activating batteries for loads under 50W |
+| **battery_optimal_balancing** | Power threshold (W) before distributing load across multiple batteries. Below this uses one battery; above this distributes load. Range: 50-2500W | With 2000W: 1500W uses 1 battery; 2500W uses 2 batteries |
+| **battery_optimal_max** | Maximum power (W) a single battery can output for charge or discharge. Protects battery from overcurrent. Range: 50-2500W | Set to 3000 for high-capacity; 2000 for smaller batteries |
+| **setpoint_min** | Maximum total charging power (W) across all batteries combined. Set to 0 to disable charging entirely. Range: 0-12000W | Set to 8000 to limit total charging to 8kW max |
+| **setpoint_max** | Maximum total discharging power (W) across all batteries combined. Set to 0 to disable discharging entirely. Range: 0-12000W | Set to 10000 to limit total discharging to 10kW max |
+
+---
+
+## Target Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **grid_entity** | Select the grid power sensor measuring net consumption. Must be a power sensor with kW or W unit. Positive = grid import, negative = grid export. | Select `sensor.grid_power` or `sensor.net_consumption` |
+| **offset_entity** | Optional sensors whose values (in Watts) are subtracted from grid reading. Excludes certain loads from affecting battery control. Default: none (empty list) | Select `sensor.car_charger_power` and `sensor.pool_heater` to exclude them |
+| **setpoint_template** | Advanced: Custom Jinja2 template to modify target setpoint. Available variable: `corrected_net_load`. Use to apply custom logic. Default: `{{ corrected_net_load }}` | `{{ (corrected_net_load * 0.8) \| int }}` reduces setpoint to 80%; `{{ corrected_net_load + 500 }}` adds 500W offset |
+
+---
+
+## Setpoint Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **setpoint_target_min** | Lower limit of grid target band (W). When grid import falls below this, batteries discharge to return to band. Range: -10000 to 5000W | Set to -500 creates deadband where grid can export 0-500W without triggering charge |
+| **setpoint_target_max** | Upper limit of grid target band (W). When grid import exceeds this, batteries charge to return to band. Range: -5000 to 10000W | Set to 500 creates deadband where grid can import 0-500W without triggering discharge |
+
+---
+
+## Smoothing Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **smoothing_min_watts** | Hysteresis value (W) - minimum change between old and new setpoint to trigger action. Prevents frequent switching due to noise. Range: 0-500W | Set to 50 to ignore changes smaller than 50W |
+| **smoothing_max_watts** | Maximum allowed change (W) between old and new setpoint per cycle. Limits ramp rate to protect equipment. Range: 50-10000W | Set to 1000 to limit power changes to 1kW per update cycle |
+| **smoothing_above** | Applies exponential smoothing only when change exceeds this threshold (W). Below this threshold uses full setpoint immediately. Range: 0-5000W | With 1000W: changes under 1000W apply instantly; above 1000W apply smoothing factor |
+| **smoothing_factor** | Damping factor for exponential smoothing (0.01-1). Lower = slower response, more stable; higher = faster response. 1 = no smoothing. Default: 0.7 | `0.5` = change is 50% toward target per cycle; `0.9` = very gradual 9-step response |
+| **smoothing_factor_zero** | Special damping factor when crossing zero (switching between charge/discharge). Lower prevents rapid oscillation. Range: 0.01-1. Default: 0.3 | `0.2` = cautious 5-step crossing; prevents flipping between modes |
+
+---
+
+## Script Section
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
+| **start_condition** | Optional conditions that must be true to activate automation. Allows time-based or mode-based control. Default: none (always active) | Only run if `input_boolean.battery_enabled = on` or during `time: before: "22:00"` |
+| **stop_action** | Action when start condition is not met. Options: "Run script with setpoint 0" or "Do not run the script". Default: "Run script with setpoint 0" | Select "Do not run the script" to completely pause during night hours |
+| **update_interval** | Minimum time to wait between accepting new grid data updates. Prevents rapid oscillation and CPU load. Default: 10 seconds | Set to 5 seconds for fast-responding systems; 30 seconds for stable/slow systems |
+| **debug** | Enable debug logging to Home Assistant trace/logbook. Shows all variables during execution for troubleshooting. Default: false | Enable to see setpoint calculations, battery activation, and offsets |
+
+---
+
+## Key Concepts
+
+### Deadband Example
+With `target_min = -200W` and `target_max = 200W`:
+- Grid exports 0-200W → no action (within band)
+- Grid exports 250W → batteries discharge to return to band
+- Grid imports 0-200W → no action (within band)
+- Grid imports 250W → batteries charge to return to band
+
+### Smoothing Formula
+When crossing zero with `smoothing_factor_zero = 0.3`:
+new_setpoint = (0.3 × raw_setpoint) + (0.7 × battery_current_power)
+
+
+**Example:**
+- Current battery power: -1000W (charging)
+- Raw setpoint: +500W (discharge)
+- Calculation: (0.3 × 500) + (0.7 × -1000) = 150 - 700 = -550W
+- Result: Gradual transition from -1000W to +500W instead of immediate switch
+
+### Load Balancing Example
+With `optimal_balancing = 2000W` and 3 batteries:
+- 1500W load → uses 1 battery at 1500W
+- 4000W load → distributes across 2 batteries (2000W each)
+- 6000W load → distributes across 3 batteries (2000W each)
+
+### SoC Sorting Example
+With `sort_by_soc = true` and `setpoint < 0` (charging):
+- Battery A: 35% SoC (rounded to 40%)
+- Battery B: 42% SoC (rounded to 40%)
+- Battery C: 68% SoC (rounded to 70%)
+- Charging order: A → B → C (lowest to highest, ensures balanced aging)
+
+---
