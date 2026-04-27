@@ -44,10 +44,9 @@ Complete reference guide for all configuration inputs in the Marstek battery con
 
 | Field | Explanation | Example |
 |-------|-------------|---------|
-| **Battery`s** | Select one or more Marstek Battery devices to control. Supports ESPHome and Marstek Modbus integrations. Multiple devices can be selected for load balancing. | Select "Marstek Battery (Living Room)" and "Marstek Battery (Garage)" |
-| **Minimum State of Charge** | Minimum State of Charge (%) - Batteries below this level won't participate during discharge. Prevents over-discharging. Range: 0-50% | Set to 20 to prevent discharging below 20% SoC |
-| **Maximum State of Charge** | Maximum State of Charge (%) - Batteries above this level won't participate during charge. Prevents over-charging. Range: 50-100% | Set to 90 to stop charging when batteries reach 90% SoC |
-
+| **Batteries** | Select one or more Battery devices to control. | Select "Marstek Venus Modbus" and "Marstek m1" |
+| **Minimum State of Charge** | Batteries below this level won't participate during discharge. Prevents over-discharging. Range: 0-50% | Set to 20 to prevent discharging below 20% SoC |
+| **Maximum State of Charge** | Batteries above this level won't participate during charge. Prevents over-charging. Range: 50-100% | Set to 90 to stop charging when batteries reach 90% SoC |
 
 
 ## Battery Rotation Section
