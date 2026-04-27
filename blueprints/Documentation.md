@@ -99,11 +99,11 @@ With `Order by State of Charge` on 10% and `setpoint < 0` (charging):
 - Charging order: B → C → A (lowest to highest, ensures balanced aging)
 
 ### Grid target Example
-**Grid zero**, min 0 and max 0.
-**Charge only**, min 0 and max 5000. solar charging
-**Discharge only**, min -5000 and max 0.
-**Full charge**, min 5000 and max 5000.
-**Full discharge**, min -5000 and max -5000.
+**Grid zero**, min 0 and max 0.  
+**Charge only**, min 0 and max 5000. solar charging  
+**Discharge only**, min -5000 and max 0.  
+**Full charge**, min 5000 and max 5000.  
+**Full discharge**, min -5000 and max -5000.  
 
 Depending on your amount of battery`s and grid use you maybe need an higher value then 5000.
 Other ways to control this is by adjusting min/Max charging to zero under Power or to create an own setpoint with 'setpoint template'.
