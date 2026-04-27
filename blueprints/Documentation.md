@@ -13,17 +13,16 @@ To successfully configure the application, you need to fill in atleast the follo
 ## Inputs overview
 Complete reference guide for all configuration inputs in the Marstek battery control blueprint.
 
----
 
 ## Battery Selection Section
 
 | Field | Explanation | Example |
 |-------|-------------|---------|
 | **Battery`s** | Select one or more Marstek Battery devices to control. Supports ESPHome and Marstek Modbus integrations. Multiple devices can be selected for load balancing. | Select "Marstek Battery (Living Room)" and "Marstek Battery (Garage)" |
-| **Minimum State of Charge** | Minimum State of Charge (%) - Batteries below this level won't participate in load balancing during discharge. Prevents over-discharging. Range: 0-99% | Set to 20 to prevent discharging below 20% SoC |
-| **Maximum State of Charge** | Maximum State of Charge (%) - Batteries above this level won't participate in load balancing during charge. Prevents over-charging. Range: 1-100% | Set to 90 to stop charging when batteries reach 90% SoC |
+| **Minimum State of Charge** | Minimum State of Charge (%) - Batteries below this level won't participate during discharge. Prevents over-discharging. Range: 0-50% | Set to 20 to prevent discharging below 20% SoC |
+| **Maximum State of Charge** | Maximum State of Charge (%) - Batteries above this level won't participate during charge. Prevents over-charging. Range: 50-100% | Set to 90 to stop charging when batteries reach 90% SoC |
 
----
+
 
 ## Battery Rotation Section
 
@@ -32,7 +31,7 @@ Complete reference guide for all configuration inputs in the Marstek battery con
 | **Order by State of Charge** | When enabled (default: true), orders batteries by State of Charge so they stay within 10% of each other. Overrides priority offset template for balanced aging. | Enable (true) for automatic SoC balancing; disable (false) for fixed priority order |
 | **Priority offset template** | Template to rotate battery priority based on a calculated value. Only used if "Keep SOCs within 10%" is disabled. | `{{ now().timetuple().tm_yday }}` (rotates daily) or `{{ now().hour }}` (rotates hourly) |
 
----
+
 
 ## Power Section
 
@@ -43,8 +42,6 @@ Complete reference guide for all configuration inputs in the Marstek battery con
 | **Battery maximum power** | Maximum power (W) a single battery can output for charge or discharge. Protects battery from overcurrent. Range: 50-2500W | Set to 3000 for high-capacity; 2000 for smaller batteries |
 | **Maximum charging** | Maximum total charging power (W) across all batteries combined. Set to 0 to disable charging entirely. Range: 0-12000W | Set to 8000 to limit total charging to 8kW max |
 | **Maximum discharging** | Maximum total discharging power (W) across all batteries combined. Set to 0 to disable discharging entirely. Range: 0-12000W | Set to 10000 to limit total discharging to 10kW max |
-
----
 
 ## Setpoint Section
 A **setpoint** is the target power value (in Watts) that the blueprint calculates to control your batteries. It tells the batteries how much power they should charge or discharge to maintain your desired grid operating point.
@@ -57,8 +54,6 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Offset entities** | Optional sensors whose values (in Watts) are subtracted from grid reading. Excludes certain loads from affecting battery control. Default: none (empty list) | Select `sensor.car_charger_power` and `sensor.pool_heater` to exclude them |
 | **setpoint template** | Advanced: Custom Jinja2 template to modify target setpoint. Available variable: `corrected_net_load`. Use to apply custom logic. Default: `{{ corrected_net_load }}` | `{{ (corrected_net_load * 0.8) \| int }}` reduces setpoint to 80%; `{{ corrected_net_load + 500 }}` adds 500W offset. Distract the power from a other brand battery; `{{ corrected_net_load + states.sensor.sessy_deem_power.state | int }}` Set it the same to your solar. {{ states.sensor.solar_power.state | int }} |
 
----
-
 ## Smoothing Section
 
 | Field | Explanation | Example |
@@ -69,8 +64,6 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Smoothing factor** | Damping factor for exponential smoothing (0.01-1). Lower = slower response, more stable; higher = faster response. 1 = no smoothing. Default: 0.7 | `0.5` = change is 50% toward target per cycle; `0.9` = very gradual 9-step response |
 | **smoothing factor when passing zero** | Special damping factor when crossing zero (switching between charge/discharge). Lower prevents rapid oscillation. Range: 0.01-1. Default: 0.3 | `0.2` = cautious 5-step crossing; prevents flipping between modes |
 
----
-
 ## Script Section
 
 | Field | Explanation | Example |
@@ -80,8 +73,6 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Additional stop actions** | Custom action(s) when start condition is not met. | Send a notification stop or start an other device or script. Stop the battery with an action if you selected the "Do not run the script" as stop action. |
 | **Update interval** | Minimum time to wait between accepting new grid data updates. Default: 10 seconds | Set to 5 seconds for fast-responding systems; 30 seconds for stable/slow systems |
 | **Debug** | Enable debug logging to Home Assistant trace/logbook. Shows all variables during execution for troubleshooting. Default: false | Enable to see setpoint calculations, battery activation, and offsets |
-
----
 
 ## Key Concepts
 
