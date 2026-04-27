@@ -7,7 +7,7 @@ Install the blueprint:
 
 To successfully configure the application, you need to fill in atleast the following fields:
 
-1. **Battery's**: Select the batteries you want to use.
+1. **Batteries**: Select the batteries you want to use.
 2. **Grid**: measuring grid net consumption.
 3. **Grid target minimum value**: Set the minimum value the system should aim for.
 4. **Grid target maximum value**: Set the maximum value the system should aim for.
