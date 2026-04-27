@@ -2,25 +2,24 @@
 
 # Getting Started
 
-Install the blueprint:
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FTazzios%2Fha-marstek%2Fblob%2Fmain%2Fblueprints%2Fmarstek%2520x%2520range%2520om%2520blueprint.yaml)
 
-To successfully configure the application, you need to fill in atleast the following fields:
+To successfully configure the blueprint, you need to fill in atleast the following fields:
 
-1. **Batteries**: Select the batteries you want to use.
-2. **Grid**: measuring grid net consumption.
-3. **Grid target minimum value**: Set the minimum value the system should aim for.
-4. **Grid target maximum value**: Set the maximum value the system should aim for.
+- **Battery's**: Select the batteries you want to use.
+- **Grid**: measuring grid net consumption.
+- **Grid target minimum value**: Set the minimum value the system should aim for.
+- **Grid target maximum value**: Set the maximum value the system should aim for.
 
 
 ## Getting your Marstek in Home assistant
 If you do not have the Marstek in Home assistant yet.
-Easywat  
+Easy way  
 1. Marstek venus with the Local API enabled (modbus over ethernet)
 2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main)
 3. Enabled the neccesary entities mentioned below. 
 
-Oldway
+Old way
 - Marstek Venus E v1,v2 or v3.
 - Supported ESPHome configurations
   - [fonske/MarstekVenus-LilygoRS485](https://github.com/fonske/MarstekVenus-LilygoRS485)  
