@@ -94,7 +94,7 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 |-------|-------------|---------|
 | **Start condition** | Optional conditions that must be true to activate automation. Allows time-based or mode-based control. Default: none (always active) | Only run if `input_boolean.battery_enabled = on` or during `time: before: "22:00"`. Make a dropdown helper to choose which blueprint has to run. `input_select.Marstek_control.state = "NOM"` |
 | **Stop action** | Action when start condition is not met. Options: "Run script with setpoint 0" or "Do not run the script". When you use the "do not run" option understand that the battery will continue what is was doing. Default: "Run script with setpoint 0" | Select "Do not run the script" to completely pause during night hours |
-| **Additional stop actions** | Custom action(s) when start condition is not met. | Send a notification stop or start an other device or script. Stop the battery with an action if you selected the "Do not run the script" as stop action. |
+| **Additional stop actions** | Custom action(s) when start condition is not met. | Stop the battery if you selected the "Do not run the script" at stop action. notification, add extra delay, Stop the automation it self, start another |
 | **Update interval** | Minimum time to wait between accepting new grid data updates. Default: 10 seconds | Set to 5 seconds for fast-responding systems; 30 seconds for stable/slow systems |
 | **Debug** | Enable debug logging to Home Assistant trace/logbook. Shows all variables during execution for troubleshooting. Default: false | Enable to see setpoint calculations, battery activation, and offsets |
 
