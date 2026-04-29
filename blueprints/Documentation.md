@@ -53,7 +53,7 @@ Complete reference guide for all configuration inputs in the Marstek battery con
 | Field | Explanation | Example |
 |-------|-------------|---------|
 | **Order by State of Charge** | When enabled (default: true), orders batteries by State of Charge so they stay within 10% of each other. Overrides priority offset template for balanced aging. | Enable (true) for automatic SoC balancing; disable (false) for fixed priority order |
-| **Priority offset template** | Template to rotate battery priority based on a calculated value. Only used if "Keep SOCs within 10%" is disabled. | `{{ now().timetuple().tm_yday }}` (rotates daily) or `{{ now().hour }}` (rotates hourly) |
+| **Priority offset template** | Template to rotate battery priority based on a calculated value. Only used if "Keep SOCs within 10%" is disabled. | `{{ now().timetuple().tm_yday }}` rotates daily or `{{ now().hour }}` rotates hourly (not recommended) |
 
 
 
@@ -76,7 +76,7 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Grid target minimum value** | Lower limit of grid target band (W). When grid import falls below this, batteries discharge to return to band. Range: -10000 to 5000W | Set to -500 creates deadband where grid can export 0-500W without triggering charge |
 | **Grid target maximum value** | Upper limit of grid target band (W). When grid import exceeds this, batteries charge to return to band. Range: -5000 to 10000W | Set to 500 creates deadband where grid can import 0-500W without triggering discharge |
 | **Offset entities** | Optional sensors whose values (in Watts) are subtracted from grid reading. Excludes certain loads from affecting battery control. Default: none (empty list) | Select `sensor.car_charger_power` and `sensor.pool_heater` to exclude them |
-| **setpoint template** | Advanced: Custom Jinja2 template to modify target setpoint. Available variable: `corrected_net_load`. Use to apply custom logic. Default: `{{ corrected_net_load }}` | `{{ (corrected_net_load * 0.8) \| int }}` reduces setpoint to 80%; `{{ corrected_net_load + 500 }}` adds 500W offset. Distract the power from a other brand battery; `{{ corrected_net_load + states.sensor.sessy_deem_power.state | int }}` Set it the same to your solar. {{ states.sensor.solar_power.state | int }} |
+| **setpoint template** | Advanced: Custom Jinja2 template to modify target setpoint. Available variable: `corrected_net_load`. Use to apply custom logic. Default: `{{ corrected_net_load }}` | `{{ (corrected_net_load * 0.8) \| int }}` reduces setpoint to 80%; `{{ corrected_net_load + 500 }}` adds 500W offset.  `{{ corrected_net_load + states.sensor.sessy_deem_power.state \| int }}` Distract the power from a other brand battery(watch the + as the value is seen from the battery instead of the grid). `{{ states.sensor.solar_power.state \| int }}` Set it the same to your solar. |
 
 ## Smoothing Section
 
