@@ -1,3 +1,14 @@
+Version 2.0  
+Breaking: Sort by soc is now a integer instead of boolean  
+New: Start condition  
+New: Adjustabel Sort by soc percentages  
+New: Stop action  
+New: Setpoint template  
+Fix: Sort by soc was always applied  
+Improved: Blueprint inputs, reordered inputs, update text and collapsed sections  
+Improved: Code, split max difference and absolute limit  
+Improved: Code, search enitities in one place  
+  
 Version: 1.9  
 New: [HA integration marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support  
 
