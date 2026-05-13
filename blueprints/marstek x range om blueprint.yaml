@@ -1,9 +1,9 @@
 blueprint:
   name: Marstek X range on the Meter
   description: >
-    Conntrol  Marstek Batteries according to a grid sensor and a target range 
+    Control  Marstek Batteries according to a grid sensor and a target range 
 
-    Version: 2.0
+    **Version: 2.0**
 
     Breaking: sort by soc is now a integer instead of boolean 
 
@@ -11,7 +11,7 @@ blueprint:
 
     New: start condition
 
-    New: adjustabel Sort by soc percentages.
+    New: adjustable Sort by soc percentages.
 
     Fix: sort by soc was always applied 
 
@@ -21,8 +21,7 @@ blueprint:
 
     Improved: code, search enitities in one place
       
-    📘 More info  
-    https://github.com/Tazzios/ha-marstek/tree/main/blueprints
+    📘 [Information and documentation](https://github.com/Tazzios/ha-marstek/tree/main/blueprints)
 
   author: Tazzios
   domain: automation
@@ -32,8 +31,8 @@ blueprint:
       icon: mdi:battery-plus-variant
       input:
         battery_device:
-          name: Battery`s
-          description: Battery devices to control
+          name: Batteries
+          description: Batteries to control
           default: null
           selector:
             device:
@@ -68,7 +67,7 @@ blueprint:
       input:
         sort_by_soc:
           name: Order by State of Charge
-          description: order the batteries by State of Charge and keep the SOC difference between set percentages. Below 5 means off, then the Priority offset template will be applied.
+          description: order the batteries by State of Charge and keep the SOC difference between set percentages. **Below 5 means off**, then the Priority offset template will be applied.
           default: 10
           selector:
             number:
@@ -90,7 +89,7 @@ blueprint:
       input:
         battery_optimal_min:
           name: Battery Minimum power
-          description: Minimum power to start a single battery with charge or discharge.
+          description: Minimum power for a single battery to start with charge or discharge.
           default: 20
           selector:
             number:
@@ -99,7 +98,7 @@ blueprint:
               unit_of_measurement: "Watt"
         battery_optimal_balancing:
           name: Max optimal power
-          description: Amount of power required before loadbalancing to more batteries
+          description: Amount of power required before loadbalancing between batteries
           default: 2000
           selector:
             number:
@@ -119,7 +118,7 @@ blueprint:
         # It will be inverted later in the blueprint to calculate 'min_setpoint' for logic.
         setpoint_min:
           name: Maximum charging
-          description: If this is 0, charging is disabled. Total setpoint for all batteries combined.
+          description: Total charging power for all batteries combined. If this is 0, charging is disabled.
           default: 12000
           selector:
             number:
@@ -129,7 +128,7 @@ blueprint:
               unit_of_measurement: "Watt"
         setpoint_max:
           name: Maximum discharging
-          description: If this is 0, discharging is disabled. Total setpoint for all batteries combined.
+          description: Total discharging power for all batteries combined.If this is 0, discharging is disabled.
           default: 12000
           selector:
             number:
@@ -140,12 +139,12 @@ blueprint:
 
     setpoint_section:
       name: Setpoint
-      description: In this section are the grid inputs where the setpoint for the batteries are calculated on.
+      description: This section shows the grid inputs that determine the battery setpoints.
       icon: mdi:gauge
       input:
         grid_entity:
           name: Grid
-          description: Entity measuring grid net consumption
+          description: Entity measuring net grid
           default: null
           selector:
             entity:
@@ -176,9 +175,9 @@ blueprint:
     setpoint_advanced_section:
       name: Advanced setpoint settings
       description: Options to adjust or override the setpoint.
-      icon: mdi:code-braces
+      icon: mdi:pencil-ruler
       collapsed: true
-      input:              
+      input:
         offset_entity:
           name: Offset entities
           description: Entities whose value (in Watts) should be subtracted from the grid sensor. E.g. Car charger power sensor
@@ -193,20 +192,20 @@ blueprint:
                   - input_number
         setpoint_template:
           name: setpoint template
-          description: optional, custom code to change the setpoint for the batteries.
+          description: Custom code to change the setpoint for the batteries.
           default: "{{ corrected_net_load }}"
           selector:
             template:
 
     smooth_section:
       name: smoothing
-      description: Various option to control the smoothing of the setpoint.
+      description: Various options to control setpoint smoothing.
       icon: mdi:waves
       collapsed: true
       input:
         smoothing_min_watts:
           name: Minimum differents
-          description: Hysteresis, minimum delta (in watts) between previous and new setpoints. This should not be lower than the Minimum Power of one battery.
+          description: Hysteresis, minimum difference (in watts) between the previous and new setpoints. This value should not be lower than the minimum power of a single battery.
           default: 25
           selector:
             number:
@@ -215,7 +214,7 @@ blueprint:
               unit_of_measurement: "Watt"
         smoothing_max_watts:
           name: Maximum differents
-          description: Maximum delta (in watts) between previous and new setpoints.
+          description: Maximum difference between the previous and new setpoints
           default: 2000
           selector:
             number:
@@ -224,7 +223,7 @@ blueprint:
               unit_of_measurement: "Watt"
         smoothing_above:
           name: Smoothing above
-          description: Apply the smoothing factor only above this delta (in watts).
+          description: Apply smoothing only when the setpoint rises above this value.
           default: 1000
           selector:
             number:
@@ -233,7 +232,7 @@ blueprint:
               unit_of_measurement: "Watt"
         smoothing_factor:
           name: smoothing factor
-          description: Example with old setpoint 1500 new 500 and factor 0.7. The differents 1500-500= 1000*0.7=700 new setpoint will be 1500-700=800. 1 to disable.
+          description: Scales the change between setpoints. Example; old setpoint 1500 new 500 and factor 0.7. The differents 1500-500= 1000*0.7=700 new setpoint will be 1500-700=800. Set to 1 to disable.
           default: 0.7
           selector:
             number:
@@ -242,7 +241,7 @@ blueprint:
               max: 1
         smoothing_factor_zero:
           name: smoothing factor when passing zero
-          description: Same as above only this one is used when 0 is crossed. Set this lower to avoid switching between charge/discharge. 1 to disable
+          description: This smoothing factor is used when the setpoint crosses zero. Lower values can help to prevent switching between charge and discharge. Set to 1 to disable.
           default: 0.3
           selector:
             number:
@@ -257,13 +256,13 @@ blueprint:
       input:
         start_condition:
           name: Start conditions
-          description: "optional, conditions to be met before starting this automation. "
+          description: "Optional conditions that must be met before this automation starts. "
           default: []
           selector:
             condition:
         stop_action_script:
           name: Stop action
-          description: "blueprint action when start condition is not met."
+          description: "Behavior when start conditions are not met. Be aware: choosing ‘do not run the script’ keeps the last battery setpoint unchanged."
           default: "Run script with setpoint 0"
           selector:
             select:
@@ -273,20 +272,20 @@ blueprint:
                 - "Do not run the script"
         stop_action_additional:
           name: Additional stop actions
-          description: "optional, actions when start condition is not met "
+          description: "Optional actions when start conditions are not met. Examples: send a notification, add a delay before run again, stop the automation, start another automation."
           default: []
           selector:
             action:
         update_interval:
           name: Update interval
-          description: Time to wait before accepting new data from the grid sensor
+          description: Time to wait before processing new grid sensor readings.
           default:
             seconds: 10
           selector:
             duration: {}
         debug:
           name: Debug log
-          description: log variables in the trace
+          description: Include variables in the execution trace.
           default: false
           selector:
             boolean: {}
@@ -382,33 +381,32 @@ action:
       setpoint: >
         {{ 0 }}
 
-
-# start_condition false with hard stop, setpoint 0 stop is implicit
+  # start_condition false with hard stop, setpoint 0 stop is implicit
   - choose:
-    - conditions:
-        - condition: not
-          conditions:
-            - condition: or
-              conditions:
-                # No start_condition set
-                - condition: template
-                  value_template: "{{ start_condition is none }}"
-                # start_condition is true
-                - condition: !input start_condition
-      sequence:
-        # Execute custom actions if defined
-        - choose:
-            - conditions:
-                - condition: template
-                  value_template: "{{ stop_action_additional is not none and stop_action_additional != [] }}"
-              sequence: !input stop_action_additional      
-        # Handle stop_action option
-        - choose:
-            - conditions:
-                - condition: template
-                  value_template: "{{ stop_action == 'Do not run the script' }}"
-              sequence:
-                - stop: "Stopped by stop_action"
+      - conditions:
+          - condition: not
+            conditions:
+              - condition: or
+                conditions:
+                  # No start_condition set
+                  - condition: template
+                    value_template: "{{ start_condition is none }}"
+                  # start_condition is true
+                  - condition: !input start_condition
+        sequence:
+          # Execute custom actions if defined
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ stop_action_additional is not none and stop_action_additional != [] }}"
+                sequence: !input stop_action_additional
+          # Handle stop_action option
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ stop_action == 'Do not run the script' }}"
+                sequence:
+                  - stop: "Stopped by stop_action"
   # start_condition true
   - choose:
       - conditions:
@@ -469,7 +467,7 @@ action:
                 {% elif raw_setpoint > smoothing_above %}
                   {% set sf = smoothing_factor %} 
                 {% else %}
-                  {% set sf = 1 %} # No smoothing below threshold
+                  {% set sf = 1 %} {# --- No smoothing below threshold --- #}
                 {% endif %}
 
                 {# --- exponential smoothing --- #}
@@ -522,6 +520,9 @@ action:
           {{ device_ids }}
         {% endif %}
 
+      battery_count: >
+        {{ device_ids | count }}
+
       # sort by offset
       priority_offset: >
         {% if sort_by_soc  %}
@@ -529,9 +530,6 @@ action:
         {% else%}
             {{ priority_offset_template % battery_count }}
         {% endif %}
-
-      battery_count: >
-        {{ device_ids | count }}
 
   - choose:
       - conditions:
@@ -685,7 +683,6 @@ action:
                         - action: select.select_option
                           target:
                             entity_id: >
-                              {# als mode is niet minder dan x minuten geleden gewijzigd #}
                               {{ repeat.item.mode }}
 
                           data:
@@ -725,7 +722,7 @@ action:
                   value_template: >
                     {% set state = states(repeat.item.rs485_control) %}
                     {{ (repeat.item.integration == 'esphome' and state == 'enable')
-                      or (repeat.item.integration == 'marstek_modbus' and state == 'on') }}
+                       or (repeat.item.integration == 'marstek_modbus' and state == 'on') }}
                 - choose:
                     - conditions:
                         - condition: template
@@ -737,7 +734,7 @@ action:
                             entity_id: >
                               {{ repeat.item.mode }}
                           data:
-                            option: stop
+                            option: charge
                 - action: number.set_value
                   continue_on_error: true
                   target:
@@ -787,7 +784,7 @@ action:
                             entity_id: >
                               {{ repeat.item.mode }}
                           data:
-                            option: stop
+                            option: discharge
                 - action: number.set_value
                   continue_on_error: true
                   target:
