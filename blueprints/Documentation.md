@@ -14,8 +14,9 @@ To successfully configure the blueprint, you need to fill in atleast the followi
 
 ## Getting your Marstek in Home assistant
 If you do not have the Marstek in Home assistant yet.
+
 Easy way  
-1. Marstek venus with the Local API enabled (modbus over ethernet)
+1. Marstek venus with firmware that supports TCP modbus and connected ethernet cable (not wifi)
 2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main)
 3. Enabled the neccesary entities mentioned below. 
 
