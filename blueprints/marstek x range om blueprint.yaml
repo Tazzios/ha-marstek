@@ -338,8 +338,8 @@ variables:
   esv_soc: "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$"
   esv_rs485: "(rs485_control_mode|rs485_control_mode|rs485_besturingsmodus|rs485_steuermodus)$"
   esv_mode: "(forcible_charge_discharge|force_mode|geforceerde_modus|force_mode)$"
-  esv_setpointcharge: "(forcible_charge_power|set_forcible_charge_power|forceer_laadvermogen|ladeleistung_einstellen)$"
-  esv_setpointdischarge: "(forcible_discharge_power|set_forcible_discharge_power|forceer_ontlaadvermogen|entladeleistung_einstellen)$"
+  esv_setpointcharge: "(forcible_charge_power|set_forcible_charge_power|set_charge_power|forceer_laadvermogen|ladeleistung_einstellen)$"
+  esv_setpointdischarge: "(forcible_discharge_power|set_forcible_discharge_power|set_discharge_power|forceer_ontlaadvermogen|entladeleistung_einstellen)$"
 
 trigger:
   - trigger: state
