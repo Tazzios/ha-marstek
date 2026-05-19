@@ -1,8 +1,7 @@
-# Marstek X Range on the Meter - Documentation
+# X Range on the Meter - Documentation
+This documentation is (about) the same for Sessy and Marstek.
 
 # Getting Started
-
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FTazzios%2Fha-marstek%2Fblob%2Fmain%2Fblueprints%2Fmarstek%2520x%2520range%2520om%2520blueprint.yaml)
 
 To successfully configure the blueprint, you need to fill in atleast the following fields:
 
@@ -10,32 +9,7 @@ To successfully configure the blueprint, you need to fill in atleast the followi
 - **Grid**: measuring grid net consumption.
 - **Grid target minimum value**: Set the minimum value the system should aim for.
 - **Grid target maximum value**: Set the maximum value the system should aim for.
-
-
-## Getting your Marstek in Home assistant
-If you do not have the Marstek in Home assistant yet.
-
-Easy way  
-1. Marstek venus with firmware that supports TCP modbus and connected ethernet cable (not wifi)
-2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main)
-3. Enabled the neccesary entities mentioned below. 
-
-Old way
-- Marstek Venus E v1,v2 or v3.
-- Supported ESPHome configurations
-  - [fonske/MarstekVenus-LilygoRS485](https://github.com/fonske/MarstekVenus-LilygoRS485)  
-  - [onske/MarstekVenus-M5stackRS485](https://github.com/fonske/MarstekVenus-M5stackRS485)  
-  - [Superduper1969/MarstekVenus-LilygoRS485](https://github.com/Superduper1969/MarstekVenus-LilygoRS485)
-    
-or other ESPHOME software that has the following entities endig with in home assistant:
-  - `rs485_control_mode`  
-  - `forcible_charge_discharge`  
-  - `ac_power`  
-  - `forcible_charge_power`  
-  - `forcible_discharge_power`  
-  - `state_of_charge`
-   
-
+ 
 ## Inputs overview
 Complete reference guide for all configuration inputs in the Marstek battery control blueprint.
 
