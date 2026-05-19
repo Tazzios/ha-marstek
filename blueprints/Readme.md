@@ -17,7 +17,31 @@ This Home Assistant automation controls Marstek batteries according to a **grid 
 - Smooth transitions, Smoothing factor above adjustable level.
 - Smooth transitions, seperate smoothing factor when passing zero.
 - Start condition, Set a start condition before the script is allowed to run
-- Stop action, When the start condition is not met do something else instead. 
+- Stop action, When the start condition is not met do something else instead.
 
+## Getting your Marstek in Home assistant
+If you do not have the Marstek in Home assistant yet.
+
+Easy way  
+1. Marstek venus with firmware that supports TCP modbus and connected ethernet cable (not wifi)
+2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main)
+3. Enabled the neccesary entities mentioned below. 
+
+Old way
+- Marstek Venus E v1,v2 or v3.
+- Supported ESPHome configurations
+  - [fonske/MarstekVenus-LilygoRS485](https://github.com/fonske/MarstekVenus-LilygoRS485)  
+  - [onske/MarstekVenus-M5stackRS485](https://github.com/fonske/MarstekVenus-M5stackRS485)  
+  - [Superduper1969/MarstekVenus-LilygoRS485](https://github.com/Superduper1969/MarstekVenus-LilygoRS485)
+    
+or other ESPHOME software that has the following entities endig with in home assistant:
+  - `rs485_control_mode`  
+  - `forcible_charge_discharge`  
+  - `ac_power`  
+  - `forcible_charge_power`  
+  - `forcible_discharge_power`  
+  - `state_of_charge`
+
+## Screenshot 
 <img width="1044"  alt="Marstek XOM 2 0" src="https://github.com/user-attachments/assets/0f1e73fd-308e-4ece-9f8b-b71fc2fe4a7a" />
 
