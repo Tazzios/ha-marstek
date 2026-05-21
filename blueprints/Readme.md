@@ -43,5 +43,4 @@ or other ESPHOME software that has the following entities endig with in home ass
   - `state_of_charge`
 
 ## Screenshot 
-<img width="1044"  alt="Marstek XOM 2 0" src="https://github.com/user-attachments/assets/0f1e73fd-308e-4ece-9f8b-b71fc2fe4a7a" />
-
+<img width="974" height="2860" alt="afbeelding" src="https://github.com/user-attachments/assets/b2e0bd18-815e-404c-9357-4bf949207751" />
