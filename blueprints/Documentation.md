@@ -1,6 +1,11 @@
 # X Range on the Meter - Documentation
 This documentation is (about) the same for Sessy and Marstek.
 
+## Index
+- [Getting Started](#getting-started)
+- [Inputs overview](#inputs-overview)
+- [Key Concepts](#key-concepts)
+
 # Getting Started
 
 To successfully configure the blueprint, you need to fill in atleast the following fields:
@@ -10,8 +15,8 @@ To successfully configure the blueprint, you need to fill in atleast the followi
 - **Grid target minimum value**: Set the minimum value the system should aim for.
 - **Grid target maximum value**: Set the maximum value the system should aim for.
  
-## Inputs overview
-Complete reference guide for all configuration inputs in the Marstek battery control blueprint.
+# Inputs overview
+Complete reference guide for all configuration inputs in the battery control blueprint.
 
 
 ## Battery Selection Section
@@ -50,6 +55,12 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Grid** | Select the grid power sensor measuring net consumption. Must be a power sensor with kW or W unit. Positive = grid import, negative = grid export. | Select `sensor.grid_power` or `sensor.net_consumption` |
 | **Grid target minimum value** | Lower limit of grid target band (W). When grid import falls below this, batteries discharge to return to band. Range: -10000 to 5000W | Set to -500 creates deadband where grid can export 0-500W without triggering charge |
 | **Grid target maximum value** | Upper limit of grid target band (W). When grid import exceeds this, batteries charge to return to band. Range: -5000 to 10000W | Set to 500 creates deadband where grid can import 0-500W without triggering discharge |
+
+## Advanced setpoint settings
+Options to adjust or override the setpoint.
+
+| Field | Explanation | Example |
+|-------|-------------|---------|
 | **Offset entities** | Optional sensors whose values (in Watts) are subtracted from grid reading. Excludes certain loads from affecting battery control. Default: none (empty list) | Select `sensor.car_charger_power` and `sensor.pool_heater` to exclude them |
 | **setpoint template** | Advanced: Custom Jinja2 template to modify target setpoint. Available variable: `corrected_net_load`. Use to apply custom logic. Default: `{{ corrected_net_load }}` | `{{ (corrected_net_load * 0.8) \| int }}` reduces setpoint to 80%; `{{ corrected_net_load + 500 }}` adds 500W offset.  `{{ corrected_net_load + states.sensor.sessy_deem_power.state \| int }}` Distract the power from a other brand battery(watch the + as the value is seen from the battery instead of the grid). `{{ states.sensor.solar_power.state \| int }}` Set it the same to your solar. |
 
@@ -73,22 +84,22 @@ A **setpoint** is the target power value (in Watts) that the blueprint calculate
 | **Update interval** | Minimum time to wait between accepting new grid data updates. Default: 10 seconds | Set to 5 seconds for fast-responding systems; 30 seconds for stable/slow systems |
 | **Debug** | Enable debug logging to Home Assistant trace/logbook. Shows all variables during execution for troubleshooting. Default: false | Enable to see setpoint calculations, battery activation, and offsets |
 
-## Key Concepts
+# Key Concepts
 
-### Load Balancing Example
+## Load Balancing Example
 With `Max optimal power` = 2000W, `Battery maximum power` = 2500W and 3 batteries:
 - 1500W load → uses 1 battery at 1500W
 - 4000W load → distributes across 2 batteries (2000W each)
 - 6600W load → distributes across 3 batteries (2200W each)
 
-### SoC Sorting Example
+## SoC Sorting Example
 With `Order by State of Charge` on 10% and `setpoint < 0` (charging):
 - Battery A: 80% SoC (rounded to 80%)
 - Battery B: 42% SoC (rounded to 40%)
 - Battery C: 68% SoC (rounded to 70%)
 - Charging order: B → C → A (lowest to highest, ensures balanced aging)
 
-### Grid target Example
+## Grid target Example
 **Grid zero**, min 0 and max 0.  
 **Charge only**, min 0 and max 5000. solar charging  
 **Discharge only**, min -5000 and max 0.  
@@ -98,7 +109,7 @@ With `Order by State of Charge` on 10% and `setpoint < 0` (charging):
 Depending on your amount of battery`s and grid use you maybe need an higher value then 5000.
 Other ways to control this is by adjusting min/Max charging to zero under Power or to create an own setpoint with 'setpoint template'.
 
-### Deadband Example
+## Deadband Example
 With `Target minimum value` = -200W and `Target maximum value` = 200W:
 - Grid exports 0-200W → no action (within band)
 - Grid exports 250W → batteries discharge to return to band
