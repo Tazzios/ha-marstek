@@ -1,7 +1,7 @@
 Version: 2.1  
-New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)
-Improved: entity regex recognition
-Improved: debug messages numbered and added entity names in debug
+New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)  
+Improved: entity regex recognition  
+Improved: debug messages numbered and added entity names in debug  
 
 Version 2.0  
 Breaking: Sort by soc is now a integer instead of boolean  
