@@ -1,27 +1,17 @@
 blueprint:
   name: Marstek X range on the Meter
   description: >
-    Control  Marstek Batteries according to a grid sensor and a target range 
+    Control Marstek Batteries with modbus according to a grid sensor and a target range or manual override
 
-    **Version: 2.0**
+    **Version: 2.1**
 
-    Breaking: sort by soc is now a integer instead of boolean 
+    New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)
 
-    New: setpoint template  
+    Improved: entity regex recognition
+    
+    Improved: debug messages numbered and added entity names in debug
 
-    New: start condition
-
-    New: adjustable Sort by soc percentages.
-
-    Fix: sort by soc was always applied 
-
-    Improved: Blueprint setup reordered inputs and collapsed sections
-
-    Improved: code, split max difference and absolute limit
-
-    Improved: code, search enitities in one place
-      
-    📘 [Information and documentation](https://github.com/Tazzios/ha-marstek/tree/main/blueprints)
+    📘 [Information ](https://github.com/Tazzios/ha-marstek/tree/main/blueprints) and [documentation](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/Documentation.md)
 
   author: Tazzios
   domain: automation
@@ -39,6 +29,7 @@ blueprint:
               filter:
                 - integration: esphome
                 - integration: marstek_modbus
+                - integration: marstek_venus_energy_manager
               multiple: true
         battery_soc_min:
           name: Minimum State of Charge
@@ -333,13 +324,13 @@ variables:
   debug: !input debug
 
   #Entity Search Values for the different integrations.
-  # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De
+  # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De, 
   esv_ac_power: "(ac_power|ac_vermogen|AC-Leistung)$"
-  esv_soc: "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand)$"
-  esv_rs485: "(rs485_control_mode|rs485_control_mode|rs485_besturingsmodus|rs485_steuermodus)$"
-  esv_mode: "(forcible_charge_discharge|force_mode|geforceerde_modus|force_mode)$"
-  esv_setpointcharge: "(forcible_charge_power|set_forcible_charge_power|set_charge_power|forceer_laadvermogen|ladeleistung_einstellen)$"
-  esv_setpointdischarge: "(forcible_discharge_power|set_forcible_discharge_power|set_discharge_power|forceer_ontlaadvermogen|entladeleistung_einstellen)$"
+  esv_soc: "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand|Batterie-SOC)$"
+  esv_rs485: "(rs485)"
+  esv_mode: "(forcible_charge_discharge|force_mode|geforceerde_modus)$"
+  esv_setpointcharge: "(forcible_charge_power|set_charge_power|(?<!ont)laadvermogen|(?<!ent)ladeleistung_einstellen)$"
+  esv_setpointdischarge: "(forcible_discharge_power|set_discharge_power|ontlaadvermogen|entladeleistung_einstellen)$"
 
 trigger:
   - trigger: state
@@ -484,6 +475,7 @@ action:
             data:
               name: "Debug"
               message: >
+                Debug1 power
                 grid: {{ grid }} 
                 offset_total: {{ offset_total }}
                 Battery_ac_power_total: {{ Battery_ac_power_total }}
@@ -540,6 +532,7 @@ action:
             data:
               name: "Debug"
               message: >
+                Debug2 devices
                 device_ids: {{ device_ids }}
                 battery_count: {{ battery_count }}
                 priority_offset: {{ priority_offset }}
@@ -581,6 +574,22 @@ action:
           {% set entities.soc = entities.soc + [device_entities(device_id) | list | select("search", esv_soc) | list | join("")] %}
         {% endfor %}
         {{ entities.soc[priority_offset:] + entities.soc[:priority_offset] }}
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ debug }}"
+        sequence:
+          - service: logbook.log
+            data:
+              name: "Debug"
+              message: >
+                Debug3 entities
+                battery_rs485_control_entity: {{ battery_rs485_control_entity }}
+                battery_mode_entity: {{ battery_mode_entity }}
+                battery_setpointcharge_entity: {{ battery_setpointcharge_entity }}
+                battery_setpointdischarge_entity: {{ battery_setpointdischarge_entity }}
+                battery_soc_entity: {{ battery_soc_entity }}
 
   - variables:
       battery_setpoints: >
@@ -653,7 +662,8 @@ action:
             data:
               name: "Debug"
               message: >
-                battery_setpoints: {{ battery_setpoints }} {{battery_rs485_control_entity}}
+                Debug4 setpoints
+                battery_setpoints: {{ battery_setpoints }}
 
   # --- Nul setpoints (standby / idle) ---
   - choose:
@@ -668,9 +678,7 @@ action:
               sequence:
                 - condition: template
                   value_template: >
-                    {% set state = states(repeat.item.rs485_control) %}
-                    {{ (repeat.item.integration == 'esphome' and state == 'enable')
-                      or (repeat.item.integration == 'marstek_modbus' and state == 'on') }}
+                    {{ states(repeat.item.rs485_control) == "enable" or states(repeat.item.rs485_control) == "on" }}
                 - choose:
                     - conditions:
                         - condition: template
@@ -720,9 +728,7 @@ action:
               sequence:
                 - condition: template
                   value_template: >
-                    {% set state = states(repeat.item.rs485_control) %}
-                    {{ (repeat.item.integration == 'esphome' and state == 'enable')
-                       or (repeat.item.integration == 'marstek_modbus' and state == 'on') }}
+                    {{ states(repeat.item.rs485_control) == "enable" or states(repeat.item.rs485_control) == "on" }}
                 - choose:
                     - conditions:
                         - condition: template
