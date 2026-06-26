@@ -24,7 +24,7 @@ If you do not have the Marstek in Home assistant yet.
 
 Easy way  
 1. Marstek venus with firmware that supports TCP modbus and connected ethernet cable (not wifi)
-2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main)
+2. HA integration [ marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) or [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)
 3. Enabled the neccesary entities mentioned below. 
 
 Old way
