@@ -1,18 +1,23 @@
+Version: 2.2  
+New: Smoothing near target  
+New: Option to force modbus (rs485) to enable  
+Improved: Setpoint to 0 when grid entity is unknown  
+  
 Version: 2.1  
 New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)  
 Improved: entity regex recognition  
 Improved: debug messages numbered and added entity names in debug  
 
 Version 2.0  
-Breaking: Sort by soc is now a integer instead of boolean  
+Breaking: Sort by SOC is now a integer instead of boolean  
 New: Start condition  
-New: Adjustabel Sort by soc percentages  
+New: Adjustable Sort by SOC percentages  
 New: Stop action  
 New: Setpoint template  
-Fix: Sort by soc was always applied  
+Fix: Sort by SOC was always applied  
 Improved: Blueprint inputs, reordered inputs, update text and collapsed sections  
 Improved: Code, split max difference and absolute limit  
-Improved: Code, search enitities in one place  
+Improved: Code, search entities in one place  
   
 Version: 1.9  
 New: [HA integration marstek venus modbus](https://github.com/ViperRNMC/marstek_venus_modbus/tree/main) support  
