@@ -447,7 +447,7 @@ action:
                 {{ net_load - offset_total }}
               setpoint_template: !input setpoint_template
               setpoint: >
-                 {# --- Check if there was a valid grid_entity ---#}
+                {# --- Check if there was a valid grid_entity ---#}
                 {% if states(grid_entity) in ['unknown', 'unavailable', 'none', ''] %}
                   0
                 {% else %}
