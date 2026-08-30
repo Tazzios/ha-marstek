@@ -26,6 +26,7 @@ Complete reference guide for all configuration inputs in the battery control blu
 | **Batteries** | Select one or more Battery devices to control. | Select "Marstek Venus Modbus" and "Marstek m1" |
 | **Minimum State of Charge** | Batteries below this level won't participate during discharge. Prevents over-discharging. Range: 0-50% | Set to 20 to prevent discharging below 20% SoC |
 | **Maximum State of Charge** | Batteries above this level won't participate during charge. Prevents over-charging. Range: 50-100% | Set to 90 to stop charging when batteries reach 90% SoC |
+| **Force RS485 enable** | Attempts to enable RS485/Modbus control before controlling the batteries. | This is useful when the battery's RS485 could be disabled. | 
 
 
 ## Battery Rotation Section
@@ -73,6 +74,8 @@ Options to adjust or override the setpoint.
 | **Smoothing above** | Applies exponential smoothing only when above this threshold (W). Below this threshold full setpoint is used. Range: 0-5000W | With 1000W: changes under 1000W apply instantly; above 1000W apply smoothing factor |
 | **Smoothing factor** | Damping factor for exponential smoothing (0.01-1). Lower = slower response, more stable; higher = faster response. 1 = no smoothing. Default: 0.7 | `0.5` = change is 50% toward target per cycle; `0.9` = very gradual 9-step response |
 | **smoothing factor when passing zero** | Special damping factor when crossing zero (switching between charge/discharge). Lower prevents rapid oscillation. Range: 0.01-1. Default: 0.3 | `0.2` = cautious 5-step crossing; prevents flipping between modes |
+| **Smoothing near targets** |	Additional smoothing range around the configured grid target limits. When approaching a target boundary, the target smoothing factor can be used. Outside the target range it will not be applied. Range: 0-2000W.	| 150W applies additional smoothing within 150W of the  (min/max)target.  | 
+| **Smoothing factor near target**|	Smoothing factor used when approaching the grid target limits. 1 disables this additional smoothing. Range: 0.01-1. |	0.5 slows the final approach to the target|
 
 ## Script Section
 
