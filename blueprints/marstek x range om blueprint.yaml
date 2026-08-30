@@ -372,10 +372,6 @@ action:
   # calculate setpoint data
   - variables:
 
-      grid_valid: >
-        {{ states(grid_entity) not in ['unknown', 'unavailable', 'none', ''] }}
-
-
       # Get grid power and convert to Watts
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
@@ -451,6 +447,7 @@ action:
                 {{ net_load - offset_total }}
               setpoint_template: !input setpoint_template
               setpoint: >
+                 {# --- Check if there was a valid grid_entity ---#}
                 {% if states(grid_entity) in ['unknown', 'unavailable', 'none', ''] %}
                   0
                 {% else %}
