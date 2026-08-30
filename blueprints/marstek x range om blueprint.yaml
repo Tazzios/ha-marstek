@@ -1,15 +1,16 @@
 blueprint:
   name: Marstek X range on the Meter
+  source_url: https://github.com/Tazzios/ha-marstek/blob/main/blueprints/marstek%20x%20range%20om%20blueprint.yaml
   description: >
     Control Marstek Batteries with modbus according to a grid sensor and a target range or manual override
 
-    **Version: 2.1**
+    **Version: 2.2**
 
-    New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)
+    New: Smoothing near target
 
-    Improved: entity regex recognition
-    
-    Improved: debug messages numbered and added entity names in debug
+    New: Option to Force rs485 to enable
+
+    Improved: Setpoint to 0 when grid entity is unknown.
 
     📘 [Information ](https://github.com/Tazzios/ha-marstek/tree/main/blueprints) and [documentation](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/Documentation.md)
 
@@ -49,6 +50,12 @@ blueprint:
               min: 50
               max: 100
               unit_of_measurement: "%"
+        force_rs485_enable:
+          name: Force RS485 enable
+          description: Turn on modbus control RS485 when it is disabled.
+          default: false
+          selector:
+            boolean:
 
     rotation_section:
       name: Rotation method
@@ -239,6 +246,25 @@ blueprint:
               step: 0.01
               min: 0.01
               max: 1
+        smoothing_near_targets:
+          name: Smoothing near targets
+          description: Range within the grid targets limits where the smoothing is applied.
+          default: 150
+          selector:
+            number:
+              min: 0
+              max: 2000
+              unit_of_measurement: "Watt"
+        smoothing_near_targets_factor:
+          name: Smoothing factor near grid target
+          description: Smoothing factor when approaching the grid target limits. Set to 1 to disable.
+          default: 0.5
+          selector:
+            number:
+              step: 0.01
+              min: 0.01
+              max: 1
+
 
     script_section:
       name: Script options
@@ -286,6 +312,7 @@ variables:
   device_ids: !input battery_device
   min_battery_level: !input battery_soc_min
   max_battery_level: !input battery_soc_max
+  force_rs485_enable: !input force_rs485_enable
 
   # Battery rotation
   priority_offset_template: !input priority_offset_template
@@ -316,6 +343,9 @@ variables:
   smoothing_above: !input smoothing_above
   smoothing_factor: !input smoothing_factor
   smoothing_factor_zero: !input smoothing_factor_zero
+  smoothing_near_targets: !input smoothing_near_targets
+  smoothing_near_targets_factor: !input smoothing_near_targets_factor
+
 
   # Script
   start_condition: !input start_condition
@@ -341,6 +371,11 @@ trigger:
 action:
   # calculate setpoint data
   - variables:
+
+      grid_valid: >
+        {{ states(grid_entity) not in ['unknown', 'unavailable', 'none', ''] }}
+
+
       # Get grid power and convert to Watts
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
@@ -372,7 +407,7 @@ action:
       setpoint: >
         {{ 0 }}
 
-  # start_condition false with hard stop, setpoint 0 stop is implicit
+  # start_condition false or grid data unknown/unavailable with hard stop, setpoint 0 stop is implicit
   - choose:
       - conditions:
           - condition: not
@@ -416,55 +451,81 @@ action:
                 {{ net_load - offset_total }}
               setpoint_template: !input setpoint_template
               setpoint: >
-                {# set net_load = Battery_ac_power_total + grid #}
-                {# set corrected_net_load = net_load - offset_total #}
-
-
-                {# --- apply offset template if valid ---#}
-                {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
-
-
-                {# --- determine target setpoint ---- #}
-                {% set target = 0 %}
-                {% if corrected_net_load < target_min %}
-                  {# te veel export -> laad batterij #}
-                  {% set target = corrected_net_load  - target_min %}
-                {% elif corrected_net_load > target_max %}
-                  {# te veel import -> ontlaad batterij #}
-                  {% set target = corrected_net_load - target_max %}
-                {% endif %}
-
-
-                {# --- minimal difference --- #}
-                {% if (target - Battery_ac_power_total) | abs < smoothing_min_watts %}
-                  {% set raw_setpoint = Battery_ac_power_total %}
+                {% if states(grid_entity) in ['unknown', 'unavailable', 'none', ''] %}
+                  0
                 {% else %}
-                  {% set raw_setpoint = target %}
+
+                  {# set net_load = Battery_ac_power_total + grid #}
+                  {# set corrected_net_load = net_load - offset_total #}
+
+
+                  {# --- apply offset template if valid ---#}
+                  {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
+
+
+                  {# --- determine target setpoint ---- #}
+                  {% set target = 0 %}
+                  {% if corrected_net_load < target_min %}
+                    {# te veel export -> laad batterij #}
+                    {% set target = corrected_net_load  - target_min %}
+                  {% elif corrected_net_load > target_max %}
+                    {# te veel import -> ontlaad batterij #}
+                    {% set target = corrected_net_load - target_max %}
+                  {% endif %}
+
+
+                  {# --- minimal difference --- #}
+                  {% if (target - Battery_ac_power_total) | abs < smoothing_min_watts %}
+                    {% set raw_setpoint = Battery_ac_power_total %}
+                  {% else %}
+                    {% set raw_setpoint = target %}
+                  {% endif %}
+
+                  {# --- maximal difference --- #}
+                  {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
+                  {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
+
+
+                  {# --- absolute limits --- #}
+                  {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
+                  {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
+
+
+                  {# --- crossing zero detection and smoothing --- #}
+                  {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
+                    {# Crossing zero: existing zero-crossing smoothing #}
+                    {% set sf = smoothing_factor_zero %}
+
+                  {% elif raw_setpoint > 0 and (corrected_net_load - target_max) <= smoothing_near_targets %}
+
+                    {# Approaching target_max from above #}
+                    {% set sf = smoothing_near_targets_factor %}
+
+                  {% elif raw_setpoint < 0 and (target_min - corrected_net_load) <= smoothing_near_targets %}
+
+                    {# Approaching target_min from below #}
+                    {% set sf = smoothing_near_targets_factor %}
+
+                  {% elif raw_setpoint > smoothing_above %}
+
+                    {# Existing smoothing #}
+                    {% set sf = smoothing_factor %}
+
+                  {% else %}
+
+                    {# No smoothing #}
+                    {% set sf = 1 %}
+
+                  {% endif %}
+
+                  {# --- exponential smoothing --- #}
+                  {% set setpoint_smooth = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
+
+                  {{ setpoint_smooth | round(0) }}
                 {% endif %}
 
-                {# --- maximal difference --- #}
-                {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
-                {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
 
 
-                {# --- absolute limits --- #}
-                {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
-                {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
-
-
-                {# --- crossing zero detection and smoothing --- #}
-                {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or  (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
-                  {% set sf = smoothing_factor_zero  %}
-                {% elif raw_setpoint > smoothing_above %}
-                  {% set sf = smoothing_factor %} 
-                {% else %}
-                  {% set sf = 1 %} {# --- No smoothing below threshold --- #}
-                {% endif %}
-
-                {# --- exponential smoothing --- #}
-                {% set setpoint_smooth = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
-
-                {{ setpoint_smooth | round(0) }}
 
   - choose:
       - conditions:
@@ -590,6 +651,34 @@ action:
                 battery_setpointcharge_entity: {{ battery_setpointcharge_entity }}
                 battery_setpointdischarge_entity: {{ battery_setpointdischarge_entity }}
                 battery_soc_entity: {{ battery_soc_entity }}
+
+  # --- Force RS485 enable, a bit dirty ---
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ force_rs485_enable }}"
+        sequence:
+          - repeat:
+              for_each: "{{ battery_rs485_control_entity }}"
+              sequence:
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: >
+                            {{ states(repeat.item) not in ['on', 'enable', 'unknown', 'unavailable'] }}
+                      sequence:
+                        - action: switch.turn_on
+                          continue_on_error: true
+                          target:
+                            entity_id: "{{ repeat.item }}"
+
+                        - action: select.select_option
+                          continue_on_error: true
+                          target:
+                            entity_id: "{{ repeat.item }}"
+                          data:
+                            option: enable
+
 
   - variables:
       battery_setpoints: >
