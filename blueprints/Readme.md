@@ -14,8 +14,7 @@ This Home Assistant automation controls Marstek batteries according to a **grid 
 - Setpoint template, Do you not want to follow the grid and do something custom?   
 - Minimum and maximum power option.
 - Smooth transitions, minimum and maximum different in setpoint changes.
-- Smooth transitions, Smoothing factor above adjustable level.
-- Smooth transitions, seperate smoothing factor when passing zero.
+- Adjustable Smoothing factors; when passing zero, above a level and when near grid targets.
 - Start condition, Set a start condition before the script is allowed to run
 - Stop action, When the start condition is not met do something else instead.
 
@@ -43,4 +42,5 @@ or other ESPHOME software that has the following entities endig with in home ass
   - `state_of_charge`
 
 ## Screenshot 
-<img width="974" height="2860" alt="afbeelding" src="https://github.com/user-attachments/assets/b2e0bd18-815e-404c-9357-4bf949207751" />
+<img width="979" height="3138" alt="afbeelding" src="https://github.com/user-attachments/assets/1387cf39-a400-4808-aad3-6f2eeb07db89" />
+
