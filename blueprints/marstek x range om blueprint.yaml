@@ -2,7 +2,11 @@ blueprint:
   name: Marstek X range on the Meter
   description: >
     Control Marstek Batteries with modbus according to a grid sensor and a target range or manual override
-
+    
+    **Version: 2.1.1**
+    
+    Fix for LilyGo devices with rs485 in it's name.
+    
     **Version: 2.1**
 
     New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)
@@ -327,7 +331,7 @@ variables:
   # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De, 
   esv_ac_power: "(ac_power|ac_vermogen|AC-Leistung)$"
   esv_soc: "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand|Batterie-SOC)$"
-  esv_rs485: "(rs485)"
+  esv_rs485: "(rs485[_-]?(control_mode|besturingsmodus|bedrijfsmodus|steuermodus|control_modus|modus|mode)|(control|controle|contr_le|controlo|steuerung)[_-]?rs485)$"
   esv_mode: "(forcible_charge_discharge|force_mode|geforceerde_modus)$"
   esv_setpointcharge: "(forcible_charge_power|set_charge_power|(?<!ont)laadvermogen|(?<!ent)ladeleistung_einstellen)$"
   esv_setpointdischarge: "(forcible_discharge_power|set_discharge_power|ontlaadvermogen|entladeleistung_einstellen)$"
