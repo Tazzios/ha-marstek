@@ -199,7 +199,7 @@ blueprint:
 
     smooth_section:
       name: smoothing
-      description: Various options to control setpoint smoothing.
+      description: Options to control setpoint smoothing. The smoothing settings are applied in the order shown, with only one setting applied at a time. The minimum and maximum difference limits are always applied after smoothing. 
       icon: mdi:waves
       collapsed: true
       input: 
@@ -207,24 +207,6 @@ blueprint:
           name: smoothing factor when passing zero
           description: This smoothing factor is used when the setpoint crosses zero. Lower values can help to prevent switching between charge and discharge. Set to 1 to disable.
           default: 0.3
-          selector:
-            number:
-              step: 0.01
-              min: 0.01
-              max: 1
-        smoothing_above:
-          name: Smoothing above
-          description: Apply smoothing only when the setpoint rises above this value.
-          default: 1000
-          selector:
-            number:
-              min: 0
-              max: 5000
-              unit_of_measurement: "Watt"
-        smoothing_factor:
-          name: smoothing factor
-          description: Scales the change between setpoints. Example; old setpoint 1500 new 500 and factor 0.7. The differents 1500-500= 1000*0.7=700 new setpoint will be 1500-700=800. Set to 1 to disable.
-          default: 0.7
           selector:
             number:
               step: 0.01
@@ -248,6 +230,24 @@ blueprint:
               step: 0.01
               min: 0.01
               max: 1
+        smoothing_above:
+          name: Smoothing above
+          description: Apply smoothing only when the setpoint rises above this value.
+          default: 1000
+          selector:
+            number:
+              min: 0
+              max: 5000
+              unit_of_measurement: "Watt"
+        smoothing_factor:
+          name: smoothing factor
+          description: Scales the change between setpoints. Example; old setpoint 1500 new 500 and factor 0.7. The differents 1500-500= 1000*0.7=700 new setpoint will be 1500-700=800. Set to 1 to disable.
+          default: 0.7
+          selector:
+            number:
+              step: 0.01
+              min: 0.01
+              max: 1              
         smoothing_min_watts:
           name: Minimum differents
           description: Hysteresis, minimum difference (in watts) between the previous and new setpoints. This value should not be lower than the minimum power of a single battery.
