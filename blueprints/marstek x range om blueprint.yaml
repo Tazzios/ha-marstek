@@ -10,7 +10,9 @@ blueprint:
 
     New: Option to Force rs485 to enable
 
-    Improved: Setpoint to 0 when grid entity is unknown.
+    Improved: Setpoint to 0 when grid entity is unknown
+
+    Improved: Apply smoothing and min/max difference limits only inside the target range.
 
     📘 [Information ](https://github.com/Tazzios/ha-marstek/tree/main/blueprints) and [documentation](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/Documentation.md)
 
@@ -200,25 +202,16 @@ blueprint:
       description: Various options to control setpoint smoothing.
       icon: mdi:waves
       collapsed: true
-      input:
-        smoothing_min_watts:
-          name: Minimum differents
-          description: Hysteresis, minimum difference (in watts) between the previous and new setpoints. This value should not be lower than the minimum power of a single battery.
-          default: 25
+      input: 
+        smoothing_factor_zero:
+          name: smoothing factor when passing zero
+          description: This smoothing factor is used when the setpoint crosses zero. Lower values can help to prevent switching between charge and discharge. Set to 1 to disable.
+          default: 0.3
           selector:
             number:
-              min: 0
-              max: 500
-              unit_of_measurement: "Watt"
-        smoothing_max_watts:
-          name: Maximum differents
-          description: Maximum difference between the previous and new setpoints
-          default: 2000
-          selector:
-            number:
-              min: 50
-              max: 10000
-              unit_of_measurement: "Watt"
+              step: 0.01
+              min: 0.01
+              max: 1
         smoothing_above:
           name: Smoothing above
           description: Apply smoothing only when the setpoint rises above this value.
@@ -232,15 +225,6 @@ blueprint:
           name: smoothing factor
           description: Scales the change between setpoints. Example; old setpoint 1500 new 500 and factor 0.7. The differents 1500-500= 1000*0.7=700 new setpoint will be 1500-700=800. Set to 1 to disable.
           default: 0.7
-          selector:
-            number:
-              step: 0.01
-              min: 0.01
-              max: 1
-        smoothing_factor_zero:
-          name: smoothing factor when passing zero
-          description: This smoothing factor is used when the setpoint crosses zero. Lower values can help to prevent switching between charge and discharge. Set to 1 to disable.
-          default: 0.3
           selector:
             number:
               step: 0.01
@@ -264,7 +248,24 @@ blueprint:
               step: 0.01
               min: 0.01
               max: 1
-
+        smoothing_min_watts:
+          name: Minimum differents
+          description: Hysteresis, minimum difference (in watts) between the previous and new setpoints. This value should not be lower than the minimum power of a single battery.
+          default: 25
+          selector:
+            number:
+              min: 0
+              max: 500
+              unit_of_measurement: "Watt"
+        smoothing_max_watts:
+          name: Maximum differents
+          description: Maximum difference between the previous and new setpoints
+          default: 2000
+          selector:
+            number:
+              min: 50
+              max: 10000
+              unit_of_measurement: "Watt"
 
     script_section:
       name: Script options
@@ -445,7 +446,9 @@ action:
               corrected_net_load: >
                 {% set net_load = Battery_ac_power_total + grid %}
                 {{ net_load - offset_total }}
+                
               setpoint_template: !input setpoint_template
+
               setpoint: >
                 {# --- Check if there was a valid grid_entity ---#}
                 {% if states(grid_entity) in ['unknown', 'unavailable', 'none', ''] %}
@@ -459,6 +462,9 @@ action:
                   {# --- apply offset template if valid ---#}
                   {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
 
+                  {% set insiderange = target_min == target_max or (target_min < target_max and target_min <= corrected_net_load <= target_max) %}
+
+
 
                   {# --- determine target setpoint ---- #}
                   {% set target = 0 %}
@@ -470,55 +476,58 @@ action:
                     {% set target = corrected_net_load - target_max %}
                   {% endif %}
 
+                  {% set raw_setpoint = target %}
 
-                  {# --- minimal difference --- #}
-                  {% if (target - Battery_ac_power_total) | abs < smoothing_min_watts %}
-                    {% set raw_setpoint = Battery_ac_power_total %}
-                  {% else %}
-                    {% set raw_setpoint = target %}
+
+                  {# --- apply  only inside target range --- #}
+                  {% if insiderange %}
+                   
+                    {# --- crossing zero detection and smoothing --- #}
+                    {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
+                      {# Crossing zero: existing zero-crossing smoothing #}
+                      {% set sf = smoothing_factor_zero %}
+
+                    {% elif raw_setpoint > 0 and (corrected_net_load - target_max) <= smoothing_near_targets %}
+                    
+                      {# Approaching target_max from above #}
+                      {% set sf = smoothing_near_targets_factor %}
+
+                    {% elif raw_setpoint < 0 and (target_min - corrected_net_load) <= smoothing_near_targets %}
+
+                      {# Approaching target_min from below #}
+                      {% set sf = smoothing_near_targets_factor %}
+
+                    {% elif raw_setpoint > smoothing_above %}
+
+                      {# Existing smoothing #}
+                      {% set sf = smoothing_factor %}
+
+                    {% else %}
+
+                      {# No smoothing #}
+                      {% set sf = 1 %}
+
+                    {% endif %}
+
+                    {# --- apply smoothing --- #}
+                    {% set raw_setpoint = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
+
+
+                      {% if (raw_setpoint - Battery_ac_power_total) | abs < smoothing_min_watts %}
+                        {% set raw_setpoint = Battery_ac_power_total %}
+                      {% endif %}
+
+                      {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
+                      {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
+
                   {% endif %}
-
-                  {# --- maximal difference --- #}
-                  {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
-                  {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
-
 
                   {# --- absolute limits --- #}
                   {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
                   {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
 
+                  {{ raw_setpoint | round(0) }}
 
-                  {# --- crossing zero detection and smoothing --- #}
-                  {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
-                    {# Crossing zero: existing zero-crossing smoothing #}
-                    {% set sf = smoothing_factor_zero %}
-
-                  {% elif raw_setpoint > 0 and (corrected_net_load - target_max) <= smoothing_near_targets %}
-
-                    {# Approaching target_max from above #}
-                    {% set sf = smoothing_near_targets_factor %}
-
-                  {% elif raw_setpoint < 0 and (target_min - corrected_net_load) <= smoothing_near_targets %}
-
-                    {# Approaching target_min from below #}
-                    {% set sf = smoothing_near_targets_factor %}
-
-                  {% elif raw_setpoint > smoothing_above %}
-
-                    {# Existing smoothing #}
-                    {% set sf = smoothing_factor %}
-
-                  {% else %}
-
-                    {# No smoothing #}
-                    {% set sf = 1 %}
-
-                  {% endif %}
-
-                  {# --- exponential smoothing --- #}
-                  {% set setpoint_smooth = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
-
-                  {{ setpoint_smooth | round(0) }}
                 {% endif %}
 
 
