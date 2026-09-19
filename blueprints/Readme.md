@@ -41,6 +41,8 @@ or other ESPHOME software that has the following entities endig with in home ass
   - `forcible_discharge_power`  
   - `state_of_charge`
 
+Device naming: do not include "RS485" in the name of the device or ESPHome node. The blueprint locates the RS485 control entity by matching rs485 against entity IDs, and a device name containing "RS485" makes every entity on that device match, which breaks the automation. Only exception is device name 'lilygo_rs485' which does work.
+
 ## Screenshot 
 <img width="979" height="3138" alt="afbeelding" src="https://github.com/user-attachments/assets/1387cf39-a400-4808-aad3-6f2eeb07db89" />
 
