@@ -69,13 +69,53 @@ Options to adjust or override the setpoint.
 
 | Field | Explanation | Example |
 |-------|-------------|---------|
-| **Minimum differents** | Hysteresis value (W) - minimum change between old and new setpoint to trigger action. Prevents frequent switching due to noise. Range: 0-500W | Set to 50 to ignore changes smaller than 50W |
-| **Maximum differents** | Maximum allowed change (W) between old and new setpoint per cycle. Limits ramp rate to avoid spikes . Range: 50-10000W | Set to 1000 to limit power changes to 1kW per update cycle |
+| **smoothing factor when passing zero** | Special damping factor when crossing zero (switching between charge/discharge). Lower prevents rapid oscillation. Range: 0.01-1. Default: 0.3 | `0.2` = cautious 5-step crossing; prevents flipping between modes |
 | **Smoothing above** | Applies exponential smoothing only when above this threshold (W). Below this threshold full setpoint is used. Range: 0-5000W | With 1000W: changes under 1000W apply instantly; above 1000W apply smoothing factor |
 | **Smoothing factor** | Damping factor for exponential smoothing (0.01-1). Lower = slower response, more stable; higher = faster response. 1 = no smoothing. Default: 0.7 | `0.5` = change is 50% toward target per cycle; `0.9` = very gradual 9-step response |
-| **smoothing factor when passing zero** | Special damping factor when crossing zero (switching between charge/discharge). Lower prevents rapid oscillation. Range: 0.01-1. Default: 0.3 | `0.2` = cautious 5-step crossing; prevents flipping between modes |
 | **Smoothing near targets** |	Additional smoothing range around the configured grid target limits. When approaching a target boundary, the target smoothing factor can be used. Outside the target range it will not be applied. Range: 0-2000W.	| 150W applies additional smoothing within 150W of the  (min/max)target.  | 
 | **Smoothing factor near target**|	Smoothing factor used when approaching the grid target limits. 1 disables this additional smoothing. Range: 0.01-1. |	0.5 slows the final approach to the target|
+| **Minimum differents** | Hysteresis value (W) - minimum change between old and new setpoint to trigger action. Prevents frequent switching due to noise. Range: 0-500W | Set to 50 to ignore changes smaller than 50W |
+| **Maximum differents** | Maximum allowed change (W) between old and new setpoint per cycle. Limits ramp rate to avoid spikes . Range: 50-10000W | Set to 1000 to limit power changes to 1kW per update cycle |
+
+Order of smoothing
+The smoothing options are evaluated in the order shown. Only one smoothing factor is selected. After the selected smoothing is applied, the minimum and maximum difference limits are always applied.
+
+       ┌─────────────────────┐
+       │ Zero crossing?      │── Yes ──> sf = smoothing_factor_zero
+       └──────────┬──────────┘
+                  │ No
+                  ▼
+       ┌─────────────────────┐
+       │ Near target?        │── Yes ──> sf = smoothing_near_targets_factor
+       └──────────┬──────────┘
+                  │ No
+                  ▼
+       ┌─────────────────────┐
+       │ Setpoint >          │── Yes ──> sf = smoothing_factor
+       │ smoothing_above?    │
+       └──────────┬──────────┘
+                  │ No
+                  ▼
+              sf = 1
+           (no smoothing)
+                  │
+                  ▼
+       ┌─────────────────────┐
+       │ Calculate setpoint  │
+       │ with selected sf    │
+       │ or no smoothing     │
+       └──────────┬──────────┘
+                  │
+                  ▼
+       ╔═════════════════════╗
+       ║ ALWAYS              ║
+       ║ Apply min/max       ║
+       ║ difference limits   ║
+       ╚══════════╤══════════╝
+                  │
+                  ▼
+             Final setpoint
+
 
 ## Script Section
 
