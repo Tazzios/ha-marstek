@@ -2,7 +2,10 @@ Version: 2.2
 New: Smoothing near target  
 New: Option to force modbus (rs485) to enable  
 Improved: Setpoint to 0 when grid entity is unknown  
-  
+Improved: Apply smoothing and min/max difference limits only inside the target range  
+Improved: Apply the min/max difference limits after smoothing  
+Fix: Devices named lilygo_rs485 won't causes an error  
+
 Version: 2.1  
 New: Support for [Marstek Venus Energy Manager](https://github.com/ffunes/Marstek-Venus-Energy-Manager)  
 Improved: entity regex recognition  
