@@ -14,6 +14,10 @@ blueprint:
 
     Improved: Apply smoothing and min/max difference limits only inside the target range.
 
+    Improved: Apply the min/max difference limits after smoothing.
+
+    Fix: Devices named lilygo_rs485 won't causes an error.
+
     📘 [Information ](https://github.com/Tazzios/ha-marstek/tree/main/blueprints) and [documentation](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/Documentation.md)
 
   author: Tazzios
@@ -358,7 +362,7 @@ variables:
   # in the search the entitity searchs is as followed lily / m5stack, ViperRNMC EN,ViperRNMC NL, ViperRNMC De, 
   esv_ac_power: "(ac_power|ac_vermogen|AC-Leistung)$"
   esv_soc: "(state_of_charge|battery_soc|batterij_soc|batterie-Ladezustand|Batterie-SOC)$"
-  esv_rs485: "(rs485)"
+  esv_rs485: "(?<!lilygo_)rs485"
   esv_mode: "(forcible_charge_discharge|force_mode|geforceerde_modus)$"
   esv_setpointcharge: "(forcible_charge_power|set_charge_power|(?<!ont)laadvermogen|(?<!ent)ladeleistung_einstellen)$"
   esv_setpointdischarge: "(forcible_discharge_power|set_discharge_power|ontlaadvermogen|entladeleistung_einstellen)$"
@@ -377,7 +381,7 @@ action:
       grid: >
         {% set grid_unit = state_attr(grid_entity, "unit_of_measurement") %}
         {% set multiplier = 1 if grid_unit == "W" else 1000 if grid_unit == "kW" else 1 %}
-        {% set grid_power = states(grid_entity) | float %}
+        {% set grid_power = states(grid_entity) | float(default=none) %}
         {{ grid_power * multiplier }}
 
       offset_total: >
@@ -450,85 +454,80 @@ action:
               setpoint_template: !input setpoint_template
 
               setpoint: >
-                {# --- Check if there was a valid grid_entity ---#}
-                {% if states(grid_entity) in ['unknown', 'unavailable', 'none', ''] %}
-                  0
-                {% else %}
+                {# --- apply offset template if valid ---#}
+                {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
 
-                  {# set net_load = Battery_ac_power_total + grid #}
-                  {# set corrected_net_load = net_load - offset_total #}
+                {% if corrected_net_load is not number %}
+                  {% set corrected_net_load = 0 %}
+                {% endif %}
 
-
-                  {# --- apply offset template if valid ---#}
-                  {% set corrected_net_load = setpoint_template | float(corrected_net_load) %}
-
-                  {% set insiderange = target_min == target_max or (target_min < target_max and target_min <= corrected_net_load <= target_max) %}
+                {% set insiderange = target_min == target_max or (target_min < target_max and target_min <= corrected_net_load <= target_max) %}
 
 
 
-                  {# --- determine target setpoint ---- #}
-                  {% set target = 0 %}
-                  {% if corrected_net_load < target_min %}
-                    {# te veel export -> laad batterij #}
-                    {% set target = corrected_net_load  - target_min %}
-                  {% elif corrected_net_load > target_max %}
-                    {# te veel import -> ontlaad batterij #}
-                    {% set target = corrected_net_load - target_max %}
+                {# --- determine target setpoint ---- #}
+                {% set target = 0 %}
+                {% if corrected_net_load < target_min %}
+                  {# te veel export -> laad batterij #}
+                  {% set target = corrected_net_load  - target_min %}
+                {% elif corrected_net_load > target_max %}
+                  {# te veel import -> ontlaad batterij #}
+                  {% set target = corrected_net_load - target_max %}
+                {% endif %}
+
+                {% set raw_setpoint = target %}
+
+
+                {# --- apply  only inside target range --- #}
+                {% if insiderange %}
+                  
+                  {# --- crossing zero detection and smoothing --- #}
+                  {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
+                    {# Crossing zero: existing zero-crossing smoothing #}
+                    {% set sf = smoothing_factor_zero %}
+
+                  {% elif raw_setpoint > 0 and (corrected_net_load - target_max) <= smoothing_near_targets %}
+                  
+                    {# Approaching target_max from above #}
+                    {% set sf = smoothing_near_targets_factor %}
+
+                  {% elif raw_setpoint < 0 and (target_min - corrected_net_load) <= smoothing_near_targets %}
+
+                    {# Approaching target_min from below #}
+                    {% set sf = smoothing_near_targets_factor %}
+
+                  {% elif raw_setpoint > smoothing_above %}
+
+                    {# Existing smoothing #}
+                    {% set sf = smoothing_factor %}
+
+                  {% else %}
+
+                    {# No smoothing #}
+                    {% set sf = 1 %}
+
                   {% endif %}
 
-                  {% set raw_setpoint = target %}
+                  {# --- apply smoothing --- #}
+                  {% set raw_setpoint = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
 
 
-                  {# --- apply  only inside target range --- #}
-                  {% if insiderange %}
-                   
-                    {# --- crossing zero detection and smoothing --- #}
-                    {% if (raw_setpoint > 0 and Battery_ac_power_total < 0) or (raw_setpoint < 0 and Battery_ac_power_total > 0) %}
-                      {# Crossing zero: existing zero-crossing smoothing #}
-                      {% set sf = smoothing_factor_zero %}
-
-                    {% elif raw_setpoint > 0 and (corrected_net_load - target_max) <= smoothing_near_targets %}
-                    
-                      {# Approaching target_max from above #}
-                      {% set sf = smoothing_near_targets_factor %}
-
-                    {% elif raw_setpoint < 0 and (target_min - corrected_net_load) <= smoothing_near_targets %}
-
-                      {# Approaching target_min from below #}
-                      {% set sf = smoothing_near_targets_factor %}
-
-                    {% elif raw_setpoint > smoothing_above %}
-
-                      {# Existing smoothing #}
-                      {% set sf = smoothing_factor %}
-
-                    {% else %}
-
-                      {# No smoothing #}
-                      {% set sf = 1 %}
-
+                    {% if (raw_setpoint - Battery_ac_power_total) | abs < smoothing_min_watts %}
+                      {% set raw_setpoint = Battery_ac_power_total %}
                     {% endif %}
 
-                    {# --- apply smoothing --- #}
-                    {% set raw_setpoint = sf * raw_setpoint + (1 - sf) * Battery_ac_power_total %}
-
-
-                      {% if (raw_setpoint - Battery_ac_power_total) | abs < smoothing_min_watts %}
-                        {% set raw_setpoint = Battery_ac_power_total %}
-                      {% endif %}
-
-                      {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
-                      {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
-
-                  {% endif %}
-
-                  {# --- absolute limits --- #}
-                  {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
-                  {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
-
-                  {{ raw_setpoint | round(0) }}
+                    {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total - smoothing_max_watts)] | max %}
+                    {% set raw_setpoint = [raw_setpoint, (Battery_ac_power_total + smoothing_max_watts)] | min %}
 
                 {% endif %}
+
+                {# --- absolute limits --- #}
+                {% set raw_setpoint = [raw_setpoint, min_setpoint] | max %}
+                {% set raw_setpoint = [raw_setpoint, max_setpoint] | min %}
+
+                {{ raw_setpoint | round(0) }}
+
+
 
 
 
