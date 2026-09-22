@@ -78,7 +78,7 @@ Options to adjust or override the setpoint.
 | **Maximum differents** | Maximum allowed change (W) between old and new setpoint per cycle. Limits ramp rate to avoid spikes . Range: 50-10000W | Set to 1000 to limit power changes to 1kW per update cycle |
 
 Order of smoothing
-The smoothing options are evaluated in the order shown. Only one smoothing factor is selected. After the selected smoothing is applied, the minimum and maximum difference limits are always applied.
+The smoothing settings are active within the min/max target range of when min/max target are set the same. The smoothing options are evaluated in the order shown. Only one smoothing factor is selected. After the selected smoothing is applied, the minimum and maximum difference limits are always applied.
 
        ┌─────────────────────┐
        │ Zero crossing?      │── Yes ──> sf = smoothing_factor_zero
