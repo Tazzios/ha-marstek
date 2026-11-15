@@ -6,7 +6,7 @@ blueprint:
 
     **Version: 2.3**
 
-    Fix: custom template sets raw_setpoint inset of corrected_net_load.    
+    Fix: custom template now sets raw_setpoint inset of corrected_net_load.    
 
     📘 [Information ](https://github.com/Tazzios/ha-marstek/tree/main/blueprints) and [documentation](https://github.com/Tazzios/ha-marstek/blob/main/blueprints/Documentation.md)
 
