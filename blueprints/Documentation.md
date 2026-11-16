@@ -63,7 +63,7 @@ Options to adjust or override the setpoint.
 | Field | Explanation | Example |
 |-------|-------------|---------|
 | **Offset entities** | Optional sensors whose values (in Watts) are subtracted from grid reading. Excludes certain loads from affecting battery control. Default: none (empty list) | Select `sensor.car_charger_power` and `sensor.pool_heater` to exclude them |
-| setpoint template | Custom Jinja2 template to set the setpoint. Blueprint variables are available. All other logic are still applied. Min, max will act as grid limits.  | {{ states('sensor.solar_power') \| int(0) }} charge solar only. {{ states('input_number.dao_marstek_power') \| float(0) * -1 }} Get the setpoint from [Day Ahead Optimizer](https://github.com/corneel27/day-ahead). |
+| setpoint template | Custom Jinja2 template to set the setpoint. Blueprint variables are available. All other logic are still applied. **Important:** The grid target settings will now act as grid load balancing limits.  | {{ states('sensor.solar_power') \| int(0) }} charge solar only. {{ states('input_number.dao_marstek_power') \| float(0) * -1 }} Get the setpoint from [Day Ahead Optimizer](https://github.com/corneel27/day-ahead). |
 
 ## Smoothing Section
 
