@@ -1,3 +1,6 @@
+Version: 2.3  
+Fix: custom template now sets raw_setpoint instead of corrected_net_load.  
+
 Version: 2.2  
 New: Smoothing near target  
 New: Option to force modbus (rs485) to enable  
