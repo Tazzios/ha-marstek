@@ -8,7 +8,6 @@ Deze Home Assistant-blueprint berekent automatisch de energiestromen binnen een 
 - Zonneproductie en batterij zijn optioneel.
 - Automatische conversie van kW naar W.
 - Instelbare afronding van uitvoerwaarden.
-- Automatische berekening bij sensorwijzigingen, iedere 15 minuten en bij het opstarten van Home Assistant.
 
 ## Berekening
 
@@ -28,6 +27,10 @@ berekent de volgende energiestromen:
   - Elektriciteitsnet naar batterij.
   - Batterij naar huis.
   - Batterij naar elektriciteitsnet.
+
+## Limitaties
+Bij het zal het niet 100% correct zijn.
+Bij input sensors die niet gelijk lopen kun je rare dingen zien.
 
 ## Toepassingen
 
